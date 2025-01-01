@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <vector>
-#include "TouchProcess_Class.hpp"
 
 // 描画タイプの定義
 enum class Type { 
