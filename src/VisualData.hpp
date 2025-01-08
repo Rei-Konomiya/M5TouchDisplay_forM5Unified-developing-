@@ -20,8 +20,15 @@ enum class DrawType{
   FillCircle,     // 円形 描画
   FillEllipse,    // 楕円 描画
   FillTriangle,   // 三角形 描画
-  FloodFill       // バケツ塗りつぶし
+  FloodFill,      // バケツ塗りつぶし
+  
+  drawJpg,
+  drawPng,
+
+  drawString
 };
+
+enum 
 
 class VisualData{
 
