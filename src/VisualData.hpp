@@ -119,24 +119,17 @@ public:
   void setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
 
   // 並べるときの余白
-  // autoSizeが使われた場合、オブジェクトもautoSizeだった際は余白を10とする
   /*
     0 autoSize        : 最小値 0 で自動調整
     10 autoSize       : 最小値 10 で自動調整
     10 10             : 最小値最大値を 10 で固定
     autoSize 10       : 最大値 10 で自動調整
-    autoSize autoSize : 
+    autoSize autoSize : 残りの余白を均等分割
   */
   const int32_t autoSize = -1;
   void setFlexMargin(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y);
-  // 並べるときの子要素の大きさ
-  /*
-    autoSize : 自動で画面内に入るよう調整
-    任意     : 任意で指定された大きさに固定
-  */
-  void setContentSize();
   // 並べるときの基準点
-  void setContentPosition();
+  void setContentPosition(uint8_t datum);
 
   void drawPage(LGFX_Sprite &sprite, String pageName);
 };
