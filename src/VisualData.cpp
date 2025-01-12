@@ -9,9 +9,15 @@ DynamicJsonDocument VisualData::getVisualData(){
   return *visualData;
 };
 
-void VisualData::checkVisualData(){
-  serializeJsonPretty(getVisualData(), Serial);
-};
+bool VisualData::isExistsPage(String pageName){
+  return visualData.containsKey(pageName);
+}
+
+bool VisualData::isExistsObject(String objectName){
+  return visualData[editingPage].containsKey(objectName);
+  
+bool VisualData::isSet EditingPage(){
+  return (editingPage != "");
 
 void VisualData::addPage(String pageName){
   JsonObject Page = (*visualData)[pageName].to<JsonObject>();
