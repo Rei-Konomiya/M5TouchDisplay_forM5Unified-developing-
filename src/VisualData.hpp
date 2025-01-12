@@ -82,7 +82,9 @@ public:
 
   DynamicJsonDocument getVisualData();
 
-  void checkVisualData();
+  bool isExistsPage(String pageName);
+  bool isExistsObject(String objectName);
+  bool isSet EditingPage();
 
   void addPage(String pageName);
 
