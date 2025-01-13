@@ -1,4 +1,8 @@
-
+/*
+  検討：
+  ・エラーログだけでなく作成ログ、削除ログなどの出力
+  ・オブジェクト削除時、接続が完全に消えたかの確認
+*/
 #include "VisualData.hpp"
 
 VisualData::VisualData(int docSize){
@@ -19,6 +23,22 @@ bool VisualData::isExistsObject(String objectName){
 bool VisualData::isSet EditingPage(){
   return (editingPage != "");
 
+/*
+  deletePage(pageName)
+    ページがあるか確認し、なければfalse
+    あればページを消す
+    全体からページが消えたか確認、あればfalse
+    なければtrue
+  deleteObject(objectName)
+    オブジェクトがあるか確認し、なければfalse
+    あればオブジェクトを参照
+    オブジェクトの子要素をチェックし、子要素から親設定を解除
+    親要素をチェックし、親要素から子設定を解除
+    オブジェクトを削除
+    ページ内にオブジェクト名が無いか確認、あればfalse
+    なければtrue
+*/
+
 void VisualData::addPage(String pageName){
   JsonObject Page = (*visualData)[pageName].to<JsonObject>();
   editingPage = Page;
@@ -29,7 +49,16 @@ bool VisualData::changeSettingPage(String pageName){
   if(obj.containsKey(pageName)){
     editingPage = pageName
 };
+
 void setParentObject(String objectName, String parentName);
+/*
+  親があるか確認、なければfalse
+  子があるか確認、なければfalse
+  あれば循環参照をチェック
+  問題なければ親に子設定、子に親設定
+  親の基準座標を「描画範囲を矩形に変換した右上」に置換
+  子の各座標に親基準座標を足す
+*/
 
 void VisualData::setDrawPixelObject(String objectName, int32_t x, int32_t y, int color){
   objectNum++;
