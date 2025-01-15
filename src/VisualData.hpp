@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+#include <initializer_list>
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <ArduinoJson.h>
@@ -35,8 +37,8 @@ public:
     FillArc,        // 正円弧 描画
     FillEllipseArc, // 楕円弧 描画
     
-    DrawJpg,      // jpg ファイル描画
-    DrawPng,      // png ファイル描画
+    DrawJpgFile,    // jpg ファイル描画
+    DrawPngFile,    // png ファイル描画
 
     DrawString,     // 文字ポジション付き
 
@@ -50,6 +52,11 @@ public:
 
     FlexBox,        // 親オブジェクト専用 一列限定 横 or  縦並び補助 範囲制限
     TableBox        // 親オブジェクト専用 行列指定 横 and 縦並び補助 範囲制限
+  };
+
+  enum class dataType{
+    SD,
+    SPIFFS
   };
 
   /*
@@ -74,20 +81,21 @@ public:
         }
       }
   */
- 
+
   Debug debugLog;
 
-  DynamicJsonDocument* visualData;
+  JsonDocument visualData;
 
   JsonObject *editingPage;
   int objectNum = 0;
 
-  VisualData(int docSize, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
+  VisualData(bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
-  DynamicJsonDocument getVisualData();
+  JsonDocument getVisualData();
 
   bool isExistsPage(String pageName);
   bool isExistsObject(String objectName);
+  bool isExistsKey(String objectName, String keyName);
   bool isSetEditingPage();
 
   bool addPage(String pageName);
@@ -97,8 +105,11 @@ public:
 
   uint8_t checkCreatable(String objectName);
 
+  bool deleteData(String pageName, String keyName);
   bool deletePage(String pageName);
   bool deleteObject(String objectName);
+
+  bool createTemplateObject(String objectName, int drawType, std::initializer_list<int> argsList);
 
   bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color);
   bool setDrawLineObject        (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1                          , int color);
@@ -116,18 +127,18 @@ public:
   bool setDrawTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
   bool setFillTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
 
-  bool setDrawArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, float angle0, float angle1, int color);
-  bool setFillArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, float angle0, float angle1, int color);
-  bool setDrawEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, float angle0, float angle1, int color);
-  bool setFillEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, float angle0, float angle1, int color);
+  bool setDrawArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color);
+  bool setFillArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color);
+  bool setDrawEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color);
+  bool setFillEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color);
 
-  bool setDrawJpgObject         (String objectName, fs::File *dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale);
-  bool setDrawPngObject         (String objectName, fs::File *dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y);
+  bool setDrawJpgFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale);
+  bool setDrawPngFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y);
 
   bool setDrawStringObject      (String objectName, String text, int32_t x, int32_t y, int color, int bgcolor, uint8_t datum);
 
-  bool setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
-  bool setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
+  //bool setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
+  //bool setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
 
   // 並べるときの余白
   /*
@@ -137,10 +148,10 @@ public:
     autoSize 10       : 最大値 10 で自動調整
     autoSize autoSize : 残りの余白を均等分割
   */
-  const int32_t autoSize = -1;
-  bool setFlexMargin(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y);
+  //const int32_t autoSize = -1;
+  //bool setFlexMargin(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y);
   // 並べるときの基準点
-  bool setContentPosition(uint8_t datum);
+  //bool setContentPosition(uint8_t datum);
 
   bool drawPage(LGFX_Sprite &sprite, String pageName);
 };

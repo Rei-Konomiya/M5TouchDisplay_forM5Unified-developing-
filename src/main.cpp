@@ -29,7 +29,7 @@ void initSprite(LGFX_Sprite &sprite, int colorDepth) {
 
 M5GFX lcd;
 LGFX_Sprite sprite1(&lcd);
-VisualData vData(1024, true);
+//VisualData vData(true, true, true);
 
 void setup(){
   auto cfg = M5.config();
@@ -46,10 +46,10 @@ void setup(){
   initSprite(sprite1, cDepth_24);
 
 
-  vData.addPage("page1");
-  vData.setDrawPixelObject("", 10, 20, BLACK);
-  vData.setDrawPixelObject("", 50, 50, RED);
-  vData.getVisualData();
+  // vData.addPage("page1");
+  // vData.setDrawPixelObject("", 10, 20, BLACK);
+  // vData.setDrawPixelObject("", 50, 50, RED);
+  // vData.getVisualData();
 }
 
 void loop() {
