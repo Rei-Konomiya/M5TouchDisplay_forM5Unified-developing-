@@ -74,14 +74,15 @@ public:
         }
       }
   */
-  Debug debugText;
+ 
+  Debug debugLog;
 
   DynamicJsonDocument* visualData;
 
   JsonObject *editingPage;
   int objectNum = 0;
 
-  VisualData(int docSize, bool isSerialDebugOn);
+  VisualData(int docSize, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
   DynamicJsonDocument getVisualData();
 
@@ -96,6 +97,7 @@ public:
 
   uint8_t checkCreatable(String objectName);
 
+  bool deletePage(String pageName);
   bool deleteObject(String objectName);
 
   bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color);

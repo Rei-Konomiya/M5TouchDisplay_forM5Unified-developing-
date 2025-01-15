@@ -7,9 +7,9 @@
 #include "VisualData.hpp"
 
 // コンストラクタ
-VisualData::VisualData(int docSize, bool isSerialDebugOn){
+VisualData::VisualData(int docSize, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
   visualData = new DynamicJsonDocument(docSize);
-  debugText.setDebug(isSerialDebugOn);
+  debugLog.setDebug(enableErrorLog, enableInfoLog, enableSuccessLog);
 }
 
 /** @fn
@@ -46,22 +46,6 @@ bool VisualData::isSetEditingPage(){
   return (*editingPage);
 }
 
-/*
-  deletePage(pageName)
-    ページがあるか確認し、なければfalse
-    あればページを消す
-    全体からページが消えたか確認、あればfalse
-    なければtrue
-  deleteObject(objectName)
-    オブジェクトがあるか確認し、なければfalse
-    あればオブジェクトを参照
-    オブジェクトの子要素をチェックし、子要素から親設定を解除
-    親要素をチェックし、親要素から子設定を解除
-    オブジェクトを削除
-    ページ内にオブジェクト名が無いか確認、あればfalse
-    なければtrue
-*/
-
 
 /** @fn
  * @brief 新たにページを作成する
@@ -92,11 +76,11 @@ bool VisualData::changeSettingPage(String pageName){
 //  */
 // bool VisualData::setParentObject(String objectName, String parentName){
 //   if(!isExistsObject(objectName)){
-//     debugText.printDebug(objectName +" does not exist. Please create the object first.");
+//     debugLog.printLog(objectName +" does not exist. Please create the object first.");
 //     return false;
 //   }
 //   if(!isExistsObject(parentName)){
-//     debugText.printDebug(parentName +" does not exist. Please create the object first.");
+//     debugLog.printLog(parentName +" does not exist. Please create the object first.");
 //     return false;
 //   }
 //   if(!(*editingPage)[parentName].containsKey("child")){
@@ -117,16 +101,42 @@ bool VisualData::changeSettingPage(String pageName){
 
 uint8_t VisualData::checkCreatable(String objectName){
   if(isSetEditingPage){
-    debugText.printDebug("The page you are editing does not exist. Please create the page first.");
+    debugLog.printLog(debugLog.error, "[Editing Page] does not exist (Please set the page)");
     return 0;
   }
   if(isExistsObject(objectName)){
-    debugText.printDebug(objectName +" already exists. Modify the existing object.");
+    debugLog.printLog(debugLog.info, "["+ objectName +"] already exists (Modifying the existing object)");
     return 2;
   }
   return 1;
 }
 
+/*
+  deletePage(pageName)
+    ページがあるか確認し、なければfalse
+    あればページを消す
+    全体からページが消えたか確認、あればfalse
+    なければtrue
+  deleteObject(objectName)
+    オブジェクトがあるか確認し、なければfalse
+    あればオブジェクトを参照
+    オブジェクトの子要素をチェックし、子要素から親設定を解除
+    親要素をチェックし、親要素から子設定を解除
+    オブジェクトを削除
+    ページ内にオブジェクト名が無いか確認、あればfalse
+    なければtrue
+*/
+bool VisualData::deletePage(String pageName){
+  if(!isExistsPage(pageName)){
+    debugLog.printLog(debugLog.error, "["+ pageName +"] does not exist.");
+    return false;
+  }
+  editingPage = nullptr;
+  (*visualData).remove(pageName);
+  if((*visualData).containsKey(pageName)){
+    debugLog.printLog(debugLog.error, "Unexpected error (page cannot be deleted)");
+  }
+}
 bool VisualData::deleteObject(String objectName){
   (*editingPage).remove(objectName);
 }
