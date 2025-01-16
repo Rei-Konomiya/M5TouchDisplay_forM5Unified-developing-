@@ -16,6 +16,9 @@ VisualData::VisualData (bool enableErrorLog, bool enableInfoLog, bool enableSucc
  * @return 全体描画データ
  */
 JsonDocument VisualData::getVisualData (){
+  String jsonString;
+  serializeJson(visualData, jsonString);
+  debugLog.printLog(debugLog.info, jsonString);
   return visualData;
 };
 
@@ -56,7 +59,7 @@ bool VisualData::isExistsKey (String objectName, String keyName){
  * @return ある=true : ない=false
  */
 bool VisualData::isSetEditingPage (){
-  return editingPage;
+  return editingPage != nullptr;
 }
 
 
@@ -65,7 +68,7 @@ bool VisualData::isSetEditingPage (){
  * @param pageName ページ名
  * @return 成功=true : 失敗=false
  */
-bool VisualData::addPage (String pageName) { 
+bool VisualData::addPage (String pageName) {
   JsonObject page = visualData[pageName].to<JsonObject>();
   *editingPage = page;
   objectNum = 0;
@@ -78,7 +81,7 @@ bool VisualData::addPage (String pageName) {
  * @return 成功=true : 失敗=false
  */
 bool VisualData::changeSettingPage (String pageName){
-  if((*editingPage)[pageName].is<JsonObject>()){
+  if(visualData[pageName].is<JsonObject>()){
     (*editingPage) = visualData[pageName];
   }
   return (*editingPage) == visualData[pageName];
@@ -115,7 +118,7 @@ bool VisualData::changeSettingPage (String pageName){
 
 
 uint8_t VisualData::checkCreatable (String objectName){
-  if(isSetEditingPage()){
+  if(!isSetEditingPage()){
     debugLog.printLog(debugLog.error, "[Editing Page] does not exist (Please set the page)");
     return 0;
   }
@@ -212,7 +215,7 @@ bool VisualData::createTemplateObject (String objectName, int drawType, std::ini
 
     // データ設定
     obj["type"] = drawType;
-    JsonArray objArgs = (*editingPage)["args"].to<JsonArray>(); // 新規配列を作成
+    JsonArray objArgs = (*editingPage)[objectName]["args"].to<JsonArray>(); // 新規配列を作成
     for (auto value : argsList) {
       objArgs.add(value);
     }
@@ -392,5 +395,32 @@ bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, c
 // 並べるときの基準点
 //bool setContentPosition (uint8_t datum);
 
+String VisualData::getDrawingPage (){
+  return drawingPageName;
+}
 
-bool drawPage (LGFX_Sprite &sprite, String pageName);
+bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
+  if(visualData[pageName].is<JsonObject>()){
+    drawingPageName = pageName;
+  }else{
+    return false;
+  }
+
+  JsonObject pageObjects = visualData[drawingPageName].as<JsonObject>();
+  for(JsonPair object : pageObjects){
+    JsonObject objData = object.value().as<JsonObject>();
+    
+    DrawType type = static_cast<DrawType>(objData["type"].as<int>());
+    JsonArray args = objData["args"].as<JsonArray>();
+
+    String jsonString;
+    serializeJson(args, jsonString);
+    debugLog.printLog(debugLog.info, "type:"+static_cast<String>(objData["type"].as<int>()));
+    debugLog.printLog(debugLog.info, "args:"+jsonString);
+  }
+
+    // String jsonString;
+    // serializeJson(objData, jsonString);
+    // debugLog.printLog(debugLog.info, jsonString);
+  return true;
+}

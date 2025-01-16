@@ -86,7 +86,8 @@ public:
 
   JsonDocument visualData;
 
-  JsonObject *editingPage;
+  JsonObject *editingPage = new JsonObject();
+  String drawingPageName;
   int objectNum = 0;
 
   VisualData(bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
@@ -152,6 +153,8 @@ public:
   //bool setFlexMargin(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y);
   // 並べるときの基準点
   //bool setContentPosition(uint8_t datum);
+
+  String getDrawingPage();
 
   bool drawPage(LGFX_Sprite &sprite, String pageName);
 };

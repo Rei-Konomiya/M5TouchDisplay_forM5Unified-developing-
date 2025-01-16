@@ -26,13 +26,13 @@ public:
   // デバッグメッセージ出力関数
   void printLog(LogType type, String message){
     if(type == error && enableErrorLog){
-      Serial.println(F("error : "));
+      Serial.print(F("error : "));
       Serial.println(message);
     }else if(type == info && enableInfoLog){
-      Serial.println(F("info : "));
+      Serial.print(F("info : "));
       Serial.println(message);
     }else if(type == success && enableSuccessLog){
-      Serial.println(F("success : "));
+      Serial.print(F("success : "));
       Serial.println(message);
     }
   }
