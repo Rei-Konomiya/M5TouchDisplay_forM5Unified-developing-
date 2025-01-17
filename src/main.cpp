@@ -55,6 +55,11 @@ void setup(){
 
   vData.drawPage(sprite1, "page1");
   vData.drawPage(sprite1, "page2");
+
+  sprite1.clear(WHITE);
+  sprite1.setTextColor(BLACK, WHITE);
+  sprite1.println("test...");
+  sprite1.pushSprite(&lcd, 0, 0);
 }
 
 void loop() {

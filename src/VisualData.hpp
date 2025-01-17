@@ -156,5 +156,6 @@ public:
 
   String getDrawingPage();
 
+  bool drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args);
   bool drawPage(LGFX_Sprite &sprite, String pageName);
 };

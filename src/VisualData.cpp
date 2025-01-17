@@ -399,6 +399,57 @@ String VisualData::getDrawingPage (){
   return drawingPageName;
 }
 
+#define SWITCH_CASE(type, action) case type: { action; } break;
+
+bool VisualData::drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args){
+  Serial.print("\ttype:");
+  switch (type) {
+    SWITCH_CASE(DrawType::DrawPixel, Serial.println(F("DrawPixel")));
+    SWITCH_CASE(DrawType::DrawLine, Serial.println(F("DrawLine")));
+    SWITCH_CASE(DrawType::DrawBezier, Serial.println(F("DrawBezier")));
+    SWITCH_CASE(DrawType::DrawWideLine, Serial.println(F("DrawWideLine")));
+
+    SWITCH_CASE(DrawType::DrawRect, Serial.println(F("DrawRect")));
+    SWITCH_CASE(DrawType::DrawRoundRect, Serial.println(F("DrawRoundRect")));
+    SWITCH_CASE(DrawType::DrawTriangle, Serial.println(F("DrawTriangle")));
+    SWITCH_CASE(DrawType::DrawCircle, Serial.println(F("DrawCircle")));
+    SWITCH_CASE(DrawType::DrawEllipse, Serial.println(F("DrawEllipse")));
+    SWITCH_CASE(DrawType::DrawArc, Serial.println(F("DrawArc")));
+    SWITCH_CASE(DrawType::DrawEllipseArc, Serial.println(F("DrawEllipseArc")));
+
+    SWITCH_CASE(DrawType::FillRect, Serial.println(F("FillRect")));
+    SWITCH_CASE(DrawType::FillRoundRect, Serial.println(F("FillRoundRect")));
+    SWITCH_CASE(DrawType::FillTriangle, Serial.println(F("FillTriangle")));
+    SWITCH_CASE(DrawType::FillCircle, Serial.println(F("FillCircle")));
+    SWITCH_CASE(DrawType::FillEllipse, Serial.println(F("FillEllipse")));
+    SWITCH_CASE(DrawType::FillArc, Serial.println(F("FillArc")));
+
+    SWITCH_CASE(DrawType::DrawJpgFile, Serial.println(F("DrawJpgFile")));
+    SWITCH_CASE(DrawType::DrawPngFile, Serial.println(F("DrawPngFile")));
+
+    SWITCH_CASE(DrawType::DrawString, Serial.println(F("DrawString")));
+
+    SWITCH_CASE(DrawType::ClipArc, Serial.println(F("ClipArc")));
+    SWITCH_CASE(DrawType::ClipEllipseArc, Serial.println(F("ClipEllipseArc")));
+    SWITCH_CASE(DrawType::ClipRect, Serial.println(F("ClipRect")));
+    SWITCH_CASE(DrawType::ClipRoundRect, Serial.println(F("ClipRoundRect")));
+    SWITCH_CASE(DrawType::ClipCircle, Serial.println(F("ClipCircle")));
+    SWITCH_CASE(DrawType::ClipEllipse, Serial.println(F("ClipEllipse")));
+    SWITCH_CASE(DrawType::ClipTriangle, Serial.println(F("ClipTriangle")));
+
+    SWITCH_CASE(DrawType::FlexBox, Serial.println(F("FlexBox")));
+    SWITCH_CASE(DrawType::TableBox, Serial.println(F("TableBox")));
+    default:
+      Serial.println(F("Unknown draw type"));
+      break;
+  }
+  Serial.print("\targs:");
+  String jsonString;
+  serializeJson(args, jsonString);
+  Serial.println(jsonString);
+  return true;
+}
+
 bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
   if(visualData[pageName].is<JsonObject>()){
     drawingPageName = pageName;
@@ -413,14 +464,15 @@ bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
     DrawType type = static_cast<DrawType>(objData["type"].as<int>());
     JsonArray args = objData["args"].as<JsonArray>();
 
-    String jsonString;
-    serializeJson(args, jsonString);
-    debugLog.printLog(debugLog.info, "type:"+static_cast<String>(objData["type"].as<int>()));
-    debugLog.printLog(debugLog.info, "args:"+jsonString);
+    debugLog.printLog(debugLog.info, "drawObject:");
+    Serial.print("\tobjectName:");
+    Serial.println(object.key().c_str());
+    drawObject(sprite, type, args);
   }
 
     // String jsonString;
     // serializeJson(objData, jsonString);
     // debugLog.printLog(debugLog.info, jsonString);
+  Serial.println();
   return true;
 }
