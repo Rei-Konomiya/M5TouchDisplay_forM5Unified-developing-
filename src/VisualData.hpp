@@ -90,7 +90,7 @@ public:
   String drawingPageName;
   int objectNum = 0;
 
-  VisualData(bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
+  VisualData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
   JsonDocument getVisualData();
 
@@ -115,6 +115,7 @@ public:
   bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color);
   bool setDrawLineObject        (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1                          , int color);
   bool setDrawBezierObject      (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
+  bool setDrawWideLineObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r               , int color);
 
   bool setDrawRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color);
   bool setFillRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color);
@@ -155,6 +156,8 @@ public:
   //bool setContentPosition(uint8_t datum);
 
   String getDrawingPage();
+
+  LGFX_Sprite clipSprite;
 
   bool drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args);
   bool drawPage(LGFX_Sprite &sprite, String pageName);

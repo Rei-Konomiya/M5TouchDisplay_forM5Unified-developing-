@@ -29,7 +29,7 @@ void initSprite(LGFX_Sprite &sprite, int colorDepth) {
 
 M5GFX lcd;
 LGFX_Sprite sprite1(&lcd);
-VisualData vData(true, true, true);
+VisualData vData(&lcd, true, true, true);
 
 void setup(){
   auto cfg = M5.config();
@@ -47,20 +47,29 @@ void setup(){
 
 
   vData.addPage("page1");
-  vData.setDrawPixelObject("", 10, 20, BLACK);
+  vData.setDrawPixelObject("", 10, 20, GREEN);
   vData.setFillRectObject("", 30, 40, 60, 70, RED);
   vData.addPage("page2");
   vData.setDrawCircleObject("", 80, 90, 100, BLUE);
+  vData.setFillTriangleObject("", lcd.width(), lcd.height(), lcd.width(), 0, 0, lcd.height(), YELLOW);
   vData.getVisualData();
 
   vData.drawPage(sprite1, "page1");
-  vData.drawPage(sprite1, "page2");
-
-  sprite1.clear(WHITE);
-  sprite1.setTextColor(BLACK, WHITE);
-  sprite1.println("test...");
   sprite1.pushSprite(&lcd, 0, 0);
+
+  // sprite1.clear(WHITE);
+  // sprite1.setTextColor(BLACK, WHITE);
+  // sprite1.println("test...");
+  // sprite1.pushSprite(&lcd, 0, 0);
 }
 
 void loop() {
+  M5.update();
+  if(M5.BtnA.isPressed()){
+    vData.drawPage(sprite1, "page1");
+    sprite1.pushSprite(&lcd, 0, 0);
+  }else if(M5.BtnB.isPressed()){
+    vData.drawPage(sprite1, "page2");
+    sprite1.pushSprite(&lcd, 0, 0);
+  }
 }

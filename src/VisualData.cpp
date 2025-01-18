@@ -7,8 +7,9 @@
 #include "VisualData.hpp"
 
 // コンストラクタ
-VisualData::VisualData (bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
+VisualData::VisualData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
   debugLog.setDebug(enableErrorLog, enableInfoLog, enableSuccessLog);
+  clipSprite = new LGFX_Sprite(parent);
 }
 
 /** @fn
@@ -18,7 +19,7 @@ VisualData::VisualData (bool enableErrorLog, bool enableInfoLog, bool enableSucc
 JsonDocument VisualData::getVisualData (){
   String jsonString;
   serializeJson(visualData, jsonString);
-  debugLog.printLog(debugLog.info, jsonString);
+  debugLog.printlnLog(debugLog.info, jsonString);
   return visualData;
 };
 
@@ -94,11 +95,11 @@ bool VisualData::changeSettingPage (String pageName){
 //  */
 // bool VisualData::setParentObject(String objectName, String parentName){
 //   if(!isExistsObject(objectName)){
-//     debugLog.printLog(objectName +" does not exist. Please create the object first.");
+//     debugLog.printlnLog(objectName +" does not exist. Please create the object first.");
 //     return false;
 //   }
 //   if(!isExistsObject(parentName)){
-//     debugLog.printLog(parentName +" does not exist. Please create the object first.");
+//     debugLog.printlnLog(parentName +" does not exist. Please create the object first.");
 //     return false;
 //   }
 //   if(!(*editingPage)[parentName].containsKey("child")){
@@ -119,11 +120,11 @@ bool VisualData::changeSettingPage (String pageName){
 
 uint8_t VisualData::checkCreatable (String objectName){
   if(!isSetEditingPage()){
-    debugLog.printLog(debugLog.error, "[Editing Page] does not exist (Please set the page)");
+    debugLog.printlnLog(debugLog.error, "[Editing Page] does not exist (Please set the page)");
     return 0;
   }
   if(isExistsObject(objectName)){
-    debugLog.printLog(debugLog.info, "["+ objectName +"] already exists (Modifying the existing object)");
+    debugLog.printlnLog(debugLog.info, "["+ objectName +"] already exists (Modifying the existing object)");
     return 2;
   }
   return 1;
@@ -158,13 +159,13 @@ uint8_t VisualData::checkCreatable (String objectName){
 */
 bool VisualData::deletePage (String pageName){
   if(!isExistsPage(pageName)){
-    debugLog.printLog(debugLog.error, "["+ pageName +"] does not exist.");
+    debugLog.printlnLog(debugLog.error, "["+ pageName +"] does not exist.");
     return false;
   }
   editingPage = nullptr;
   visualData.remove(pageName);
   if((*editingPage)[pageName].is<JsonObject>()){
-    debugLog.printLog(debugLog.error, "Unexpected error (page cannot be deleted)");
+    debugLog.printlnLog(debugLog.error, "Unexpected error (page cannot be deleted)");
     return false;
   }
   return true;
@@ -172,12 +173,12 @@ bool VisualData::deletePage (String pageName){
 
 bool VisualData::deleteObject (String objectName){
   if(!isExistsObject(objectName)){
-    debugLog.printLog(debugLog.error, "["+ objectName +"] does not exist.");
+    debugLog.printlnLog(debugLog.error, "["+ objectName +"] does not exist.");
     return false;
   }
   /*
   if(!isExistsKey(objectName, "child")){
-    debugLog.printLog(debugLog.error, "["+ objectName +"] does not exist.");
+    debugLog.printlnLog(debugLog.error, "["+ objectName +"] does not exist.");
     JsonArray childArray = (*editingPage)["child"].as<JsonArray>();
     for (JsonVariant value : childArray) {
       if(isExistsKey(value, "parent")){
@@ -188,7 +189,7 @@ bool VisualData::deleteObject (String objectName){
   */
   (*editingPage).remove("objectName");
   if((*editingPage)[objectName].is<JsonObject>()){
-    debugLog.printLog(debugLog.error, "Unexpected error (page cannot be deleted)");
+    debugLog.printlnLog(debugLog.error, "Unexpected error (page cannot be deleted)");
     return false;
   }
   return true;
@@ -227,69 +228,57 @@ bool VisualData::createTemplateObject (String objectName, int drawType, std::ini
 bool VisualData::setDrawPixelObject (String objectName, int32_t x, int32_t y, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawPixel), {x, y, color});
 }
-
 bool VisualData::setDrawLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawLine), {x0, y0, x1, y1, color});
 }
-
 bool VisualData::setDrawBezierObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawBezier), {x0, y0, x1, y1, x2, y2, color});
+}
+bool VisualData::setDrawWideLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, int color){
+  return createTemplateObject(objectName, static_cast<int>(DrawType::DrawWideLine), {x0, y0, x1, y1, r, color});
 }
 
 bool VisualData::setDrawRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawRect), {x, y, w, h, color});
 }
-
 bool VisualData::setFillRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillRect), {x, y, w, h, color});
 }
-
 bool VisualData::setDrawRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawRoundRect), {x, y, w, h, r, color});
 }
-
 bool VisualData::setFillRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillRoundRect), {x, y, w, h, r, color});
 }
 
-
 bool VisualData::setDrawCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawCircle), {x, y, r, color});
 }
-
 bool VisualData::setFillCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillCircle), {x, y, r, color});
 }
-
 bool VisualData::setDrawEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawEllipse), {x, y, rx, ry, color});
 }
-
 bool VisualData::setFillEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillEllipse), {x, y, rx, ry, color});
 }
-
 bool VisualData::setDrawTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawTriangle), {x0, y0, x1, y1, x2, y2, color});
 }
-
 bool VisualData::setFillTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x0, y0, x1, y1, x2, y2, color});
 }
 
-
 bool VisualData::setDrawArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0, r1, angle0, angle1, color});
 }
-
 bool VisualData::setFillArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0, r1, angle0, angle1, color});
 }
-
 bool VisualData::setDrawEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0x, r1x, r0y, r1y, angle0, angle1, color});
 }
-
 bool VisualData::setFillEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0x, r1x, r0y, r1y, angle0, angle1, color});
 }
@@ -399,51 +388,129 @@ String VisualData::getDrawingPage (){
   return drawingPageName;
 }
 
-#define SWITCH_CASE(type, action) case type: { action; } break;
+#define SWITCH_CASE(type, action) case type: action break;
 
 bool VisualData::drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args){
-  Serial.print("\ttype:");
+  debugLog.printLog(debugLog.none, "\t\ttype: ");
   switch (type) {
-    SWITCH_CASE(DrawType::DrawPixel, Serial.println(F("DrawPixel")));
-    SWITCH_CASE(DrawType::DrawLine, Serial.println(F("DrawLine")));
-    SWITCH_CASE(DrawType::DrawBezier, Serial.println(F("DrawBezier")));
-    SWITCH_CASE(DrawType::DrawWideLine, Serial.println(F("DrawWideLine")));
+    SWITCH_CASE(DrawType::DrawPixel, {
+      debugLog.printlnLog(debugLog.none, "DrawPixel");
+      sprite.drawPixel(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawLine, {
+      debugLog.printlnLog(debugLog.none, "DrawLine");
+      sprite.drawLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawBezier, {
+      debugLog.printlnLog(debugLog.none, "DrawBezier");
+      sprite.drawBezier(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawWideLine, {
+      debugLog.printlnLog(debugLog.none, "DrawWideLine");
+      sprite.drawWideLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int>());
+    });
 
-    SWITCH_CASE(DrawType::DrawRect, Serial.println(F("DrawRect")));
-    SWITCH_CASE(DrawType::DrawRoundRect, Serial.println(F("DrawRoundRect")));
-    SWITCH_CASE(DrawType::DrawTriangle, Serial.println(F("DrawTriangle")));
-    SWITCH_CASE(DrawType::DrawCircle, Serial.println(F("DrawCircle")));
-    SWITCH_CASE(DrawType::DrawEllipse, Serial.println(F("DrawEllipse")));
-    SWITCH_CASE(DrawType::DrawArc, Serial.println(F("DrawArc")));
-    SWITCH_CASE(DrawType::DrawEllipseArc, Serial.println(F("DrawEllipseArc")));
+    SWITCH_CASE(DrawType::DrawRect, {
+      debugLog.printlnLog(debugLog.none, "DrawRect");
+      sprite.drawRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawRoundRect, {
+      debugLog.printlnLog(debugLog.none, "DrawRoundRect");
+      sprite.drawRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawTriangle, {
+      debugLog.printlnLog(debugLog.none, "DrawTriangle");
+      sprite.drawTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawCircle, {
+      debugLog.printlnLog(debugLog.none, "DrawCircle");
+      sprite.drawCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawEllipse, {
+      debugLog.printlnLog(debugLog.none, "DrawEllipse");
+      sprite.drawEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawArc, {
+      debugLog.printlnLog(debugLog.none, "DrawArc");
+      sprite.drawArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int>());
+    });
+    SWITCH_CASE(DrawType::DrawEllipseArc, {
+      debugLog.printlnLog(debugLog.none, "DrawEllipseArc");
+      sprite.drawEllipseArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int32_t>(), args[7].as<int32_t>(), args[8].as<int>());
+    });
 
-    SWITCH_CASE(DrawType::FillRect, Serial.println(F("FillRect")));
-    SWITCH_CASE(DrawType::FillRoundRect, Serial.println(F("FillRoundRect")));
-    SWITCH_CASE(DrawType::FillTriangle, Serial.println(F("FillTriangle")));
-    SWITCH_CASE(DrawType::FillCircle, Serial.println(F("FillCircle")));
-    SWITCH_CASE(DrawType::FillEllipse, Serial.println(F("FillEllipse")));
-    SWITCH_CASE(DrawType::FillArc, Serial.println(F("FillArc")));
+    SWITCH_CASE(DrawType::FillRect, {
+      debugLog.printlnLog(debugLog.none, "FillRect");
+      sprite.fillRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int>());
+    });
+    SWITCH_CASE(DrawType::FillRoundRect, {
+      debugLog.printlnLog(debugLog.none, "FillRoundRect");
+      sprite.fillRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int>());
+    });
+    SWITCH_CASE(DrawType::FillTriangle, {
+      debugLog.printlnLog(debugLog.none, "FillTriangle");
+      sprite.fillTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int>());
+    });
+    SWITCH_CASE(DrawType::FillCircle, {
+      debugLog.printlnLog(debugLog.none, "FillCircle");
+      sprite.fillCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int>());
+    });
+    SWITCH_CASE(DrawType::FillEllipse, {
+      debugLog.printlnLog(debugLog.none, "FillEllipse");
+      sprite.fillEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int>());
+    });
+    SWITCH_CASE(DrawType::FillArc, {
+      debugLog.printlnLog(debugLog.none, "FillArc");
+      sprite.fillArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int>());
+    });
 
-    SWITCH_CASE(DrawType::DrawJpgFile, Serial.println(F("DrawJpgFile")));
-    SWITCH_CASE(DrawType::DrawPngFile, Serial.println(F("DrawPngFile")));
+    SWITCH_CASE(DrawType::DrawJpgFile, {
+      debugLog.printlnLog(debugLog.none, "DrawJpgFile");
+    });
+    SWITCH_CASE(DrawType::DrawPngFile, {
+      debugLog.printlnLog(debugLog.none, "DrawPngFile");
+    });
 
-    SWITCH_CASE(DrawType::DrawString, Serial.println(F("DrawString")));
+    SWITCH_CASE(DrawType::DrawString, {
+      debugLog.printlnLog(debugLog.none, "DrawString");
+      sprite.setTextColor(args[3].as<int32_t>(), args[4].as<int32_t>());
+      sprite.setTextDatum(args[5].as<uint8_t>());
+      sprite.drawString(args[0].as<String>(), args[1].as<int32_t>(), args[2].as<int32_t>());
+    });
 
-    SWITCH_CASE(DrawType::ClipArc, Serial.println(F("ClipArc")));
-    SWITCH_CASE(DrawType::ClipEllipseArc, Serial.println(F("ClipEllipseArc")));
-    SWITCH_CASE(DrawType::ClipRect, Serial.println(F("ClipRect")));
-    SWITCH_CASE(DrawType::ClipRoundRect, Serial.println(F("ClipRoundRect")));
-    SWITCH_CASE(DrawType::ClipCircle, Serial.println(F("ClipCircle")));
-    SWITCH_CASE(DrawType::ClipEllipse, Serial.println(F("ClipEllipse")));
-    SWITCH_CASE(DrawType::ClipTriangle, Serial.println(F("ClipTriangle")));
+    SWITCH_CASE(DrawType::ClipArc, {
+      debugLog.printlnLog(debugLog.none, "ClipArc");
+    });
+    SWITCH_CASE(DrawType::ClipEllipseArc, {
+      debugLog.printlnLog(debugLog.none, "ClipEllipseArc");
+    });
+    SWITCH_CASE(DrawType::ClipRect, {
+      debugLog.printlnLog(debugLog.none, "ClipRect");
+    });
+    SWITCH_CASE(DrawType::ClipRoundRect, {
+      debugLog.printlnLog(debugLog.none, "ClipRoundRect");
+    });
+    SWITCH_CASE(DrawType::ClipCircle, {
+      debugLog.printlnLog(debugLog.none, "ClipCircle");
+    });
+    SWITCH_CASE(DrawType::ClipEllipse, {
+      debugLog.printlnLog(debugLog.none, "ClipEllipse");
+    });
+    SWITCH_CASE(DrawType::ClipTriangle, {
+      debugLog.printlnLog(debugLog.none, "ClipTriangle");
+    });
 
-    SWITCH_CASE(DrawType::FlexBox, Serial.println(F("FlexBox")));
-    SWITCH_CASE(DrawType::TableBox, Serial.println(F("TableBox")));
+    SWITCH_CASE(DrawType::FlexBox, {
+      debugLog.printlnLog(debugLog.none, "FlexBox");
+    });
+    SWITCH_CASE(DrawType::TableBox, {
+      debugLog.printlnLog(debugLog.none, "TableBox");
+    });
     default:
       Serial.println(F("Unknown draw type"));
       break;
   }
-  Serial.print("\targs:");
+  Serial.print("\t\targs:");
   String jsonString;
   serializeJson(args, jsonString);
   Serial.println(jsonString);
@@ -458,21 +525,23 @@ bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
   }
 
   JsonObject pageObjects = visualData[drawingPageName].as<JsonObject>();
+  debugLog.printlnLog(debugLog.info, "drawing: "+drawingPageName);
+
+  sprite.clear(BLACK);
+
   for(JsonPair object : pageObjects){
     JsonObject objData = object.value().as<JsonObject>();
     
     DrawType type = static_cast<DrawType>(objData["type"].as<int>());
     JsonArray args = objData["args"].as<JsonArray>();
-
-    debugLog.printLog(debugLog.info, "drawObject:");
-    Serial.print("\tobjectName:");
-    Serial.println(object.key().c_str());
+    debugLog.printLog(debugLog.none, "\tdrawObject: ");
+    debugLog.printlnLog(debugLog.none, object.key().c_str());
     drawObject(sprite, type, args);
   }
 
     // String jsonString;
     // serializeJson(objData, jsonString);
     // debugLog.printLog(debugLog.info, jsonString);
-  Serial.println();
+  debugLog.printlnLog(debugLog.none, "----------");
   return true;
 }
