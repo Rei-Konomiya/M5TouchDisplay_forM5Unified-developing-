@@ -45,7 +45,6 @@ void setup(){
 
   initSprite(sprite1, cDepth_24);
 
-
   vData.addPage("page1");
   vData.setDrawPixelObject("", 10, 20, GREEN);
   vData.setFillRectObject("", 30, 40, 60, 70, RED);
@@ -56,11 +55,6 @@ void setup(){
 
   vData.drawPage(sprite1, "page1");
   sprite1.pushSprite(&lcd, 0, 0);
-
-  // sprite1.clear(WHITE);
-  // sprite1.setTextColor(BLACK, WHITE);
-  // sprite1.println("test...");
-  // sprite1.pushSprite(&lcd, 0, 0);
 }
 
 void loop() {

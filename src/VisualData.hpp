@@ -96,6 +96,7 @@ public:
 
   bool isExistsPage(String pageName);
   bool isExistsObject(String objectName);
+  bool isExistsObjectToPage(String pageName, String objectName);
   bool isExistsKey(String objectName, String keyName);
   bool isSetEditingPage();
 

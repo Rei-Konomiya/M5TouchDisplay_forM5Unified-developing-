@@ -2,13 +2,15 @@
 
 #include "VisualData.hpp"
 
-class touchData{
-  touchData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
+class TouchData{
+  TouchData(VisualData* vData, LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
   Debug debugLog;
   LGFX_Sprite judgeSprite;
   JsonDocument processList;
   JsonDocument enabledProcessList;
+
+  VisualData* vData;
 
   enum class touchType{
     Release,          // Release
@@ -31,10 +33,23 @@ class touchData{
     Dragged,          // Drag     end
 
     Clicked,          // Click    end
-    MultiClicked,     // Click    end (multiple times)
+    MultiClicked      // Click    end (multiple times)
   };
-  bool isExistsProcessPage(String pageName);
-  int  isExistsProcess(String pageName, String processName, String objectName, touchType type);
+
+  enum class processType{
+    Release,
+    Press,
+    Hold,
+    Flick,
+    Drag,
+    Click
+  };
+
+  bool   isExistsProcessPage  (String pageName);
+  bool   isExistsProcess      (String pageName, String processName);
+  String isExistsProcessType  (String pageName, String objectName, touchType type);
+
+  JsonObject createOrGetProcess (String pageName, String processName);
 
   bool setTemplateProcess     (String pageName, String processName, String objectName, touchType type, bool enableOverBorder=false, bool returnCurrentOver=false);
 
@@ -50,15 +65,18 @@ class touchData{
   bool setHeldProcess         (String pageName, String processName, String objectName);
 
   bool setFlickProcess        (String pageName, String processName, String objectName);
-  bool setFlickingProcess     (String pageName, String processName, String objectName, bool enableOverBorder);
+  bool setFlickingProcess     (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver);
   bool setFlickedProcess      (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver);
 
   bool setDragProcess         (String pageName, String processName, String objectName);
-  bool setDraggingProcess     (String pageName, String processName, String objectName, bool enableOverBorder);
+  bool setDraggingProcess     (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver);
   bool setDraggedProcess      (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver);
 
   bool setClickedProcess      (String pageName, String processName, String objectName);
   bool setMultiClickedProcess (String pageName, String processName, String objectName, int count);
+
+  bool startProcess(processType pType);
+  bool update();
 
   String getCurrentProcess();
   bool isOverBorder();

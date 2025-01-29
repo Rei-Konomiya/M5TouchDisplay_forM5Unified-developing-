@@ -34,11 +34,24 @@ bool VisualData::isExistsPage (String pageName){
 
 /** @fn
  * @brief 指定のオブジェクトが現在編集中のページ内にあるかどうかを返す
- * @param pageName 検索するオブジェクト名
+ * @param objectName 検索するオブジェクト名
  * @return ある=true : ない=false
  */
 bool VisualData::isExistsObject (String objectName){
-  return visualData[objectName].is<JsonObject>();
+  return (*editingPage)[objectName].is<JsonObject>();
+}
+
+/** @fn
+ * @brief 指定のページ内に指定のオブジェクトがあるかどうかを返す
+ * @param pageName 検索するページ名
+ * @param objectName 検索するオブジェクト名
+ * @return 0/1/2 (ページ無 / ページ有・オブジェクト無 / ページ有・オブジェクト有)
+ */
+bool VisualData::isExistsObjectToPage (String pageName, String objectName){
+  if(isExistsPage(pageName)){
+    return visualData[pageName][objectName].is<JsonObject>();
+  }
+  return false;
 }
 
 /** @fn
@@ -187,7 +200,7 @@ bool VisualData::deleteObject (String objectName){
     }
   }
   */
-  (*editingPage).remove("objectName");
+  editingPage->remove("objectName");
   if((*editingPage)[objectName].is<JsonObject>()){
     debugLog.printlnLog(debugLog.error, "Unexpected error (page cannot be deleted)");
     return false;
@@ -210,7 +223,7 @@ bool VisualData::createTemplateObject (String objectName, int drawType, std::ini
         break;
 
       case 2: // 既存オブジェクト取得
-        obj = (*editingPage)[objectName].to<JsonObject>();
+        obj = (*editingPage)[objectName];
         break;
     }
 
