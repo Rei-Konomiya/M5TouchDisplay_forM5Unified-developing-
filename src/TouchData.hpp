@@ -8,7 +8,8 @@ class TouchData{
   Debug debugLog;
   LGFX_Sprite judgeSprite;
   JsonDocument processList;
-  JsonDocument enabledProcessList;
+  JsonObject processPage;
+  JsonObject enabledProcessList;
 
   VisualData* vData;
 
@@ -34,15 +35,6 @@ class TouchData{
 
     Clicked,          // Click    end
     MultiClicked      // Click    end (multiple times)
-  };
-
-  enum class processType{
-    Release,
-    Press,
-    Hold,
-    Flick,
-    Drag,
-    Click
   };
 
   bool   isExistsProcessPage  (String pageName);
@@ -75,7 +67,11 @@ class TouchData{
   bool setClickedProcess      (String pageName, String processName, String objectName);
   bool setMultiClickedProcess (String pageName, String processName, String objectName, int count);
 
-  bool startProcess(processType pType);
+  bool enableProcess(bool isPress);
+  bool disableProcessType(touchType tType);
+  bool disableProcess(String processName);
+  bool resetProcess();
+  bool judgeProcess(uint32_t x, uint32_t y);
   bool update();
 
   String getCurrentProcess();

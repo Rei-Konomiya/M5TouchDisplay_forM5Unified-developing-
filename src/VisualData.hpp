@@ -93,6 +93,7 @@ public:
   VisualData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
   JsonDocument getVisualData();
+  JsonObject getObjectData(String pageName, String objectName);
 
   bool isExistsPage(String pageName);
   bool isExistsObject(String objectName);

@@ -23,6 +23,12 @@ JsonDocument VisualData::getVisualData (){
   return visualData;
 };
 
+
+JsonObject VisualData::getObjectData(String pageName, String objectName){
+  return visualData[pageName][objectName];
+};
+
+
 /** @fn
  * @brief 指定のページがあるかどうかを返す
  * @param pageName 検索するページ名

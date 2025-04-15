@@ -174,8 +174,191 @@ bool TouchData::setMultiClickedProcess (String pageName, String processName, Str
   return false;
 }
 
-bool TouchData::startProcess(processType pType){
-  vData->getDrawingPage();
+bool TouchData::enableProcess(bool isPress){
+  enabledProcessList.clear();
+  if(processPage.isNull()) return false;
+  enabledProcessList = processPage;
+  return true;
+}
+
+bool TouchData::disableProcessType(touchType tType){
+  if(processPage.isNull()) return false;
+  for(JsonPair process : enabledProcessList){
+    JsonObject processData = process.value().as<JsonObject>();
+    int tTypeInt = processData["type"].as<int>();
+    if(tTypeInt == static_cast<int>(tType)){
+      enabledProcessList.remove(process.key().c_str());
+    }
+  }
+  return true;
+}
+
+bool TouchData::disableProcess(String processName){
+  if()
+  enabledProcessList.remove(processName);
+  return true;
+}
+
+/*
+  {
+    "page1": {
+      "process1": {
+        "type": 2,
+        "objectName": "objectA"
+      },
+      "process2": {
+        "type": 6,
+        "objectName": "objectA",
+        "enableOverBorder": true,
+        "returnCurrentOver": false
+      },
+      "process3": {
+        "type": 1,
+        "objectName": "objectB",
+        "count": 3
+      }
+    }
+  }
+*/
+
+#define SWITCH_CASE(type, action) case type: action break;
+
+bool TouchData::judgeProcess(uint32_t x, uint32_t y){
+  for(JsonPair process : enabledProcessList){
+    judgeSprite.clear(BLACK);
+
+    JsonObject processData = process.value().as<JsonObject>();
+    String objectName = processData["objectName"].as<String>();
+    JsonObject objectData = vData->getObjectData(vData->getDrawingPage(), objectName);
+
+    VisualData::DrawType type = static_cast<VisualData::DrawType>(objectData["type"].as<int>());
+    JsonArray args = objectData["args"].as<JsonArray>();
+
+    switch(static_cast<VisualData::DrawType>(objectData["type"].as<int>())){
+      SWITCH_CASE(VisualData::DrawType::DrawPixel, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawLine");
+        judgeSprite.drawPixel(args[0].as<int32_t>(), args[1].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawLine, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawLine");
+        judgeSprite.drawLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawBezier, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawBezier");
+        judgeSprite.drawBezier(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawWideLine, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawWideLine");
+        judgeSprite.drawWideLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), 0xfff);
+      });
+
+      SWITCH_CASE(VisualData::DrawType::DrawRect, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawRect");
+        judgeSprite.fillRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawRoundRect, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawRoundRect");
+        judgeSprite.fillRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawTriangle, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawTriangle");
+        judgeSprite.fillTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawCircle, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawCircle");
+        judgeSprite.fillCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawEllipse, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawEllipse");
+        judgeSprite.fillEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawArc, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawArc");
+        judgeSprite.fillArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawEllipseArc, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawEllipseArc");
+        judgeSprite.fillEllipseArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int32_t>(), args[7].as<int32_t>(), 0xfff);
+      });
+
+      SWITCH_CASE(VisualData::DrawType::FillRect, {
+        debugLog.printlnLog(debugLog.info, "CheckFillRect");
+        judgeSprite.fillRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::FillRoundRect, {
+        debugLog.printlnLog(debugLog.info, "CheckFillRoundRect");
+        judgeSprite.fillRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::FillTriangle, {
+        debugLog.printlnLog(debugLog.info, "CheckFillTriangle");
+        judgeSprite.fillTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::FillCircle, {
+        debugLog.printlnLog(debugLog.info, "CheckFillCircle");
+        judgeSprite.fillCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::FillEllipse, {
+        debugLog.printlnLog(debugLog.info, "CheckFillEllipse");
+        judgeSprite.fillEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), 0xfff);
+      });
+      SWITCH_CASE(VisualData::DrawType::FillArc, {
+        debugLog.printlnLog(debugLog.info, "CheckFillArc");
+        judgeSprite.fillArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), 0xfff);
+      });
+
+      SWITCH_CASE(VisualData::DrawType::DrawJpgFile, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawJpgFile");
+      });
+      SWITCH_CASE(VisualData::DrawType::DrawPngFile, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawPngFile");
+      });
+
+      SWITCH_CASE(VisualData::DrawType::DrawString, {
+        debugLog.printlnLog(debugLog.info, "CheckDrawString");
+        judgeSprite.setTextColor(0xfff, 0xfff);
+        judgeSprite.setTextDatum(args[5].as<uint8_t>());
+        judgeSprite.drawString(args[0].as<String>(), args[1].as<int32_t>(), args[2].as<int32_t>());
+      });
+
+      SWITCH_CASE(VisualData::DrawType::ClipArc, {
+        debugLog.printlnLog(debugLog.info, "CheckClipArc");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipEllipseArc, {
+        debugLog.printlnLog(debugLog.info, "CheckClipEllipseArc");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipRect, {
+        debugLog.printlnLog(debugLog.info, "CheckClipRect");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipRoundRect, {
+        debugLog.printlnLog(debugLog.info, "CheckClipRoundRect");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipCircle, {
+        debugLog.printlnLog(debugLog.info, "CheckClipCircle");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipEllipse, {
+        debugLog.printlnLog(debugLog.info, "CheckClipEllipse");
+      });
+      SWITCH_CASE(VisualData::DrawType::ClipTriangle, {
+        debugLog.printlnLog(debugLog.info, "CheckClipTriangle");
+      });
+
+      SWITCH_CASE(VisualData::DrawType::FlexBox, {
+        debugLog.printlnLog(debugLog.info, "CheckFlexBox");
+      });
+      SWITCH_CASE(VisualData::DrawType::TableBox, {
+        debugLog.printlnLog(debugLog.info, "CheckTableBox");
+      });
+      default:
+        Serial.println(F("Unknown draw type"));
+        break;
+    }
+    
+    int color = judgeSprite.readPixel(x, y);
+
+    if(color == BLACK){
+      disableProcess(objectName);
+    }
+  }
 }
 
 bool TouchData::update(){
@@ -183,10 +366,35 @@ bool TouchData::update(){
     debugLog.printlnLog(debugLog.error, "Touch sensor is disable");
     return false;
   }
-  auto t = M5.Touch.getDetail();
-  
-  if(t.isPressed()){
+  processPage = processList[vData->getDrawingPage()];
+  if(!processPage.isNull()){
+    auto t = M5.Touch.getDetail();
     
+    if(t.isPressed()){
+      if(t.wasFlickStart()){
+        disableProcessType(touchType::Hold);
+        disableProcessType(touchType::Holding);
+        disableProcessType(touchType::Held);
+        disableProcessType(touchType::Drag);
+        disableProcessType(touchType::Dragging);
+        disableProcessType(touchType::Dragged);
+        disableProcessType(touchType::Clicked);
+        disableProcessType(touchType::MultiClicked);
+      }else if(t.wasHold()){
+        disableProcessType(touchType::Flick);
+        disableProcessType(touchType::Flicking);
+        disableProcessType(touchType::Flicked);
+        disableProcessType(touchType::Clicked);
+        disableProcessType(touchType::MultiClicked);
+        if(t.wasDragStart()){
+          disableProcessType(touchType::Hold);
+          disableProcessType(touchType::Holding);
+          disableProcessType(touchType::Held);
+        }
+      }
+      judgeProcess();
+    }
+    if(!t.wasReleased()) disableProcessType(touchType::Release);
   }
 }
 
