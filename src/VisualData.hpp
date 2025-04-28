@@ -163,4 +163,7 @@ public:
 
   bool drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args);
   bool drawPage(LGFX_Sprite &sprite, String pageName);
+
+  //bool getPageData(LGFX_Sprite &sprite, String fileName);
+  bool screenShot(LGFX_Sprite &sprite, String fileName);
 };

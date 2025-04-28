@@ -78,47 +78,46 @@ JsonObject TouchData::createOrGetProcess(String pageName, String processName){
  * @param returnCurrentOver （スワイプ専用）指が範囲外に出ていてもtrueを返すようにするかどうか
  * @return あればプロセス名、無ければ空の文字列
  */
-bool TouchData::setTemplateProcess (String pageName, String processName, String objectName, touchType type, bool enableOverBorder=false, bool returnCurrentOver=false){
-  String createdProcess = isExistsProcessType(pageName, objectName, type);
-  // エラー：同じタイプのプロセスが作成済み
-  if(createdProcess != ""){
-    debugLog.printlnLog(debugLog.error, "Same type process created. (processName:"+ createdProcess +")");
-    return false;
-  }
-  // ページやオブジェクトの作成状態を取得
-  if(!vData->isExistsObjectToPage(pageName, objectName)){
-    // オブジェクトやページが作成されていなかった場合のエラー
-    debugLog.printlnLog(debugLog.error, 
-                          vData->isExistsPage(pageName) ? 
-                            "[" + objectName + "] was not created." : 
-                            "[" + pageName + "] was not created.");
-    return false;
-  }
-  // 作成開始
-  JsonObject process = createOrGetProcess(pageName, processName);
+// bool TouchData::setTemplateProcess (String pageName, String processName, String objectName, touchType type, bool enableOverBorder=false, bool returnCurrentOver=false){
+//   String createdProcess = isExistsProcessType(pageName, objectName, type);
+//   // エラー：同じタイプのプロセスが作成済み
+//   if(createdProcess != ""){
+//     debugLog.printlnLog(debugLog.error, "Same type process created. (processName:"+ createdProcess +")");
+//     return false;
+//   }
+//   // ページやオブジェクトの作成状態を取得
+//   if(!vData->isExistsObjectToPage(pageName, objectName)){
+//     // オブジェクトやページが作成されていなかった場合のエラー
+//     debugLog.printlnLog(debugLog.error, 
+//                           vData->isExistsPage(pageName) ? 
+//                             "[" + objectName + "] was not created." : 
+//                             "[" + pageName + "] was not created.");
+//     return false;
+//   }
+//   // 作成開始
+//   JsonObject process = createOrGetProcess(pageName, processName);
   
-  // 必要なデータをprocessオブジェクトに追加
-  process["type"] = static_cast<int>(touchType::Release);  // touchTypeはintとして設定、例: 1 (Release)
-  process["objectName"] = objectName;
-  // スワイプ専用のプロセスパラメータを設定
-  switch(type){
-    case touchType::Flicking:
-    case touchType::Flicked :
-    case touchType::Dragging:
-    case touchType::Dragged :
-      process["enableOverBorder"] = enableOverBorder;
-      process["returnCurrentOver"] = returnCurrentOver;
-      break;
-    default:
-      break;
-  }
-  return true;
-}
+//   // 必要なデータをprocessオブジェクトに追加
+//   process["type"] = static_cast<int>(touchType::Release);  // touchTypeはintとして設定、例: 1 (Release)
+//   process["objectName"] = objectName;
+//   // スワイプ専用のプロセスパラメータを設定
+//   switch(type){
+//     case touchType::Flicking:
+//     case touchType::Flicked :
+//     case touchType::Dragging:
+//     case touchType::Dragged :
+//       process["enableOverBorder"] = enableOverBorder;
+//       process["returnCurrentOver"] = returnCurrentOver;
+//       break;
+//     default:
+//       break;
+//   }
+//   return true;
+// }
 
 bool TouchData::setReleaseProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Release);
 }
-
 bool TouchData::setReleasingProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Releasing);
 }
@@ -194,7 +193,7 @@ bool TouchData::disableProcessType(touchType tType){
 }
 
 bool TouchData::disableProcess(String processName){
-  if()
+  //if()
   enabledProcessList.remove(processName);
   return true;
 }
@@ -392,7 +391,7 @@ bool TouchData::update(){
           disableProcessType(touchType::Held);
         }
       }
-      judgeProcess();
+      judgeProcess(t.x, t.y);
     }
     if(!t.wasReleased()) disableProcessType(touchType::Release);
   }

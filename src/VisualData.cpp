@@ -564,3 +564,59 @@ bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
   debugLog.printlnLog(debugLog.none, "----------");
   return true;
 }
+
+/*
+bool VisualData::getPageData (LGFX_Sprite &sprite, String fileName) {
+  String path = "/pageData/" + fileName + ".png";
+
+  if (!SD.exists(path)) return false;
+
+  File file = SD.open(path);
+  if (!file) return false;
+
+  bool result = sprite.drawPng(&file, 0, 0, 0.25, 0.2, lgfx::top_left);
+  file.close();
+
+  return result;
+}
+*/
+
+bool VisualData::screenShot (LGFX_Sprite &sprite, String fileName){
+  bool result = false;
+  size_t pngSize = 0;
+
+  // 画面の中央部分を PNG 化する例
+  int32_t x = 0;
+  int32_t y = 0;
+  int32_t w = sprite.width();
+  int32_t h = sprite.height();
+
+  void* pngData = sprite.createPng(&pngSize, x, y, w, h);
+
+  if (pngData) {
+    File myFile = SD.open("/pageData");
+    if (myFile) {
+      myFile.close();
+      debugLog.printlnLog(debugLog.info, "sdフォルダ確認");
+    } else {
+      SD.mkdir("/pageData");
+      debugLog.printlnLog(debugLog.success, "sdフォルダ作成完了");
+    }
+
+    // PNG データを SD カードに保存する
+    File file = SD.open("/pageData/"+ fileName +".png", FILE_WRITE);
+    if (file) {
+      file.write((uint8_t*)pngData, pngSize);
+      file.close();
+      debugLog.printlnLog(debugLog.success, "PNG保存成功");
+      result = true;
+    } else {
+      debugLog.printlnLog(debugLog.error, "PNG保存失敗");
+    }
+    free(pngData); // メモリを解放
+  } else {
+    debugLog.printlnLog(debugLog.error, "PNGエンコード失敗");
+  }
+
+  return result;
+}
