@@ -112,34 +112,34 @@ public:
   bool deletePage(String pageName);
   bool deleteObject(String objectName);
 
-  bool createTemplateObject(String objectName, int drawType, std::initializer_list<int> argsList);
+  bool createTemplateObject(String objectName, int drawType, std::initializer_list<int> argsList, uint8_t zindex = 0);
 
-  bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color);
-  bool setDrawLineObject        (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1                          , int color);
-  bool setDrawBezierObject      (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
-  bool setDrawWideLineObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r               , int color);
+  bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color, uint8_t zindex = 0);
+  bool setDrawLineObject        (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1                          , int color, uint8_t zindex = 0);
+  bool setDrawBezierObject      (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color, uint8_t zindex = 0);
+  bool setDrawWideLineObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r               , int color, uint8_t zindex = 0);
 
-  bool setDrawRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color);
-  bool setFillRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color);
-  bool setDrawRoundRectObject   (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r                   , int color);
-  bool setFillRoundRectObject   (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r                   , int color);
+  bool setDrawRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color, uint8_t zindex = 0);
+  bool setFillRectObject        (String objectName, int32_t x, int32_t y, int32_t w, int32_t h                              , int color, uint8_t zindex = 0);
+  bool setDrawRoundRectObject   (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r                   , int color, uint8_t zindex = 0);
+  bool setFillRoundRectObject   (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r                   , int color, uint8_t zindex = 0);
 
-  bool setDrawCircleObject      (String objectName, int32_t x, int32_t y                      , int32_t r                   , int color);
-  bool setFillCircleObject      (String objectName, int32_t x, int32_t y                      , int32_t r                   , int color);
-  bool setDrawEllipseObject     (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry                            , int color);
-  bool setFillEllipseObject     (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry                            , int color);
-  bool setDrawTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
-  bool setFillTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color);
+  bool setDrawCircleObject      (String objectName, int32_t x, int32_t y                      , int32_t r                   , int color, uint8_t zindex = 0);
+  bool setFillCircleObject      (String objectName, int32_t x, int32_t y                      , int32_t r                   , int color, uint8_t zindex = 0);
+  bool setDrawEllipseObject     (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry                            , int color, uint8_t zindex = 0);
+  bool setFillEllipseObject     (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry                            , int color, uint8_t zindex = 0);
+  bool setDrawTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color, uint8_t zindex = 0);
+  bool setFillTriangleObject    (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2  , int color, uint8_t zindex = 0);
 
-  bool setDrawArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color);
-  bool setFillArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color);
-  bool setDrawEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color);
-  bool setFillEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color);
+  bool setDrawArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex = 0);
+  bool setFillArcObject         (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex = 0);
+  bool setDrawEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex = 0);
+  bool setFillEllipseArcObject  (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex = 0);
 
-  bool setDrawJpgFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale);
-  bool setDrawPngFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y);
+  bool setDrawJpgFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale, uint8_t zindex = 0);
+  bool setDrawPngFileObject     (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y, uint8_t zindex = 0);
 
-  bool setDrawStringObject      (String objectName, String text, int32_t x, int32_t y, int color, int bgcolor, uint8_t datum);
+  bool setDrawStringObject      (String objectName, String text, int32_t x, int32_t y, int color, int bgcolor, uint8_t datum, uint8_t zindex = 0);
 
   //bool setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
   //bool setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
