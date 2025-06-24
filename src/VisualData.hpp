@@ -93,6 +93,7 @@ public:
   VisualData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
   JsonDocument getVisualData();
+  JsonObject getPageData(String pageName);
   JsonObject getObjectData(String pageName, String objectName);
 
   bool isExistsPage(String pageName);
@@ -112,7 +113,7 @@ public:
   bool deletePage(String pageName);
   bool deleteObject(String objectName);
 
-  bool createTemplateObject(String objectName, int drawType, std::initializer_list<int> argsList, uint8_t zindex = 0);
+  bool createTemplateObject(String objectName, int drawType, std::initializer_list<int> argsList, uint8_t zindex);
 
   bool setDrawPixelObject       (String objectName, int32_t x, int32_t y                                                    , int color, uint8_t zindex = 0);
   bool setDrawLineObject        (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1                          , int color, uint8_t zindex = 0);

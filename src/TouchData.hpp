@@ -3,13 +3,18 @@
 #include "VisualData.hpp"
 
 class TouchData{
+public:
   TouchData(VisualData* vData, LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
 
+  LovyanGFX* parent;  // 判定チェックデバッグ用、本番で使わない
   Debug debugLog;
-  LGFX_Sprite judgeSprite;
+  LGFX_Sprite* judgeSprite;
   JsonDocument processList;
   JsonObject processPage;
+  DynamicJsonDocument enabledDoc = DynamicJsonDocument(1024);  // ← メモリサイズは適宜調整
   JsonObject enabledProcessList;
+  
+  String currentProcessName = "";
 
   VisualData* vData;
 
@@ -75,6 +80,7 @@ class TouchData{
   bool update();
 
   String getCurrentProcess();
+  
   bool isOverBorder();
   bool wasOverBorder();
 };
