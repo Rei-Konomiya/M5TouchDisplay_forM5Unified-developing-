@@ -1,4 +1,3 @@
-
 /*
   検討：
   ・エラーログだけでなく作成ログ、削除ログなどの出力
@@ -41,7 +40,6 @@ JsonObject VisualData::getPageData(String pageName){
 JsonObject VisualData::getObjectData(String pageName, String objectName){
   return visualData[pageName][objectName];
 };
-
 
 /** @fn
  * @brief 指定のページがあるかどうかを返す
@@ -96,7 +94,6 @@ bool VisualData::isSetEditingPage (){
   return editingPage != nullptr;
 }
 
-
 /** @fn
  * @brief 新たにページを作成する
  * @param pageName ページ名
@@ -123,7 +120,7 @@ bool VisualData::changeSettingPage (String pageName){
 
 // /** @fn
 //  * @brief 親オブジェクトを設定する
-//  * @param pageName ページ名
+//  * @param objectName オブジェクト名
 //  * @return 成功=true : 失敗=false
 //  */
 // bool VisualData::setParentObject(String objectName, String parentName){
@@ -149,7 +146,6 @@ bool VisualData::changeSettingPage (String pageName){
   親の基準座標を「描画範囲を矩形に変換した右上」に置換
   子の各座標に親基準座標を足す
 */
-
 
 uint8_t VisualData::checkCreatable (String objectName){
   if(!isSetEditingPage()){
@@ -226,7 +222,7 @@ bool VisualData::deleteObject (String objectName){
     JsonArray childArray = (*editingPage)["child"].as<JsonArray>();
     for (JsonVariant value : childArray) {
       if(isExistsKey(value, "parent")){
-        
+       
       }
     }
   }
@@ -262,7 +258,7 @@ bool VisualData::createTemplateObject (String objectName, int drawType, std::ini
         break;
 
       case 2: // 既存オブジェクト取得
-        obj = (*editingPage)[objectName];
+        obj = (*editingPage)[objectName].to<JsonObject>();
         break;
     }
 
@@ -373,8 +369,8 @@ bool VisualData::setDrawJpgFileObject (String objectName,dataType dataSource, co
     // データ設定
     obj["type"] = static_cast<int>(DrawType::DrawJpgFile);
     JsonArray objArgs = (*editingPage)["args"].to<JsonArray>(); // 新規配列を作成
-    // String dataSource, const char *path, 
-    // int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, 
+    // String dataSource, const char *path,
+    // int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
     // int32_t offX, int32_t offY, float scale_x, float scale_y
     objArgs.add(static_cast<int>(dataSource));
     objArgs.add(path);
@@ -429,8 +425,8 @@ bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, c
     // データ設定
     obj["type"] = static_cast<int>(DrawType::DrawPngFile);
     JsonArray objArgs = (*editingPage)["args"].to<JsonArray>(); // 新規配列を作成
-    // String dataSource, const char *path, 
-    // int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, 
+    // String dataSource, const char *path,
+    // int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
     // int32_t offX, int32_t offY, float scale_x, float scale_y
     objArgs.add(static_cast<int>(dataSource));
     objArgs.add(path);
@@ -448,11 +444,9 @@ bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, c
   return false; // モードが0の場合など、失敗時はfalseを返す
 }
 
-
 // bool VisualData::setDrawStringObject (String objectName, String text, int32_t x, int32_t y, int color, int bgcolor, uint8_t datum){
 //   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x0, y0, x1, y1, x2, y2, color}, zindex);
 // }
-
 
 // bool VisualData::setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
 // bool VisualData::setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);

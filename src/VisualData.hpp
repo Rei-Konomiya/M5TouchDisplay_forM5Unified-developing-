@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VISUALDATA_HPP
+#define VISUALDATA_HPP
 
 #include <iostream>
 #include <initializer_list>
@@ -168,3 +169,5 @@ public:
   //bool getPageData(LGFX_Sprite &sprite, String fileName);
   bool screenShot(LGFX_Sprite &sprite, String fileName);
 };
+
+#endif // VISUALDATA_HPP
