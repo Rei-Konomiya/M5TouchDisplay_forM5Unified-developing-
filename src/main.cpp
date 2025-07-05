@@ -55,21 +55,6 @@ void setup(){
   vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
   vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
 
-  // --- page2 の設定 ---
-  vData.addPage("page2");
-  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
-  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
-  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
-  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
-
-  // --- page3 の設定 ---
-  vData.addPage("page3");
-  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
-  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
-  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW, 1);
-  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
-
-
   tData.setPressProcess("page1", "process1", "obj1");
   tData.setPressProcess("page1", "process2", "obj2");
   tData.setPressProcess("page1", "process3", "obj3");
@@ -77,7 +62,14 @@ void setup(){
   tData.setReleaseProcess("page1", "process11", "obj1");
   tData.setReleaseProcess("page1", "process12", "obj2");
   tData.setReleaseProcess("page1", "process13", "obj3");
-  tData.setReleaseProcess("page1", "process14", "obj4");  
+  tData.setReleaseProcess("page1", "process14", "obj4");
+
+  // --- page2 の設定 ---
+  vData.addPage("page2");
+  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
+  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
+  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
+  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
 
   tData.setPressProcess("page2", "process1", "obj1");
   tData.setPressProcess("page2", "process2", "obj2");
@@ -87,6 +79,14 @@ void setup(){
   tData.setReleaseProcess("page2", "process12", "obj2");
   tData.setReleaseProcess("page2", "process13", "obj3");
   tData.setReleaseProcess("page2", "process14", "obj4");
+
+
+  // --- page3 の設定 ---
+  vData.addPage("page3");
+  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
+  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
+  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW, 1);
+  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
 
   tData.setPressProcess("page3", "process1", "obj1");
   tData.setPressProcess("page3", "process2", "obj2");
