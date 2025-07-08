@@ -1,3 +1,5 @@
+// TouchData.cpp
+
 #include "TouchData.hpp"
 
 /** * コンストラクタ
@@ -27,8 +29,25 @@ TouchData::TouchData (VisualData* vData, LovyanGFX* parent, bool enableErrorLog,
   }
 }
 
+// デストラクタ
+TouchData::~TouchData() {
+    if (judgeSprite != nullptr) {
+        judgeSprite->deleteSprite(); // LGFX_SpriteのdeleteSprite()を呼び出す
+        delete judgeSprite; // ポインタを解放
+        judgeSprite = nullptr;
+    }
+}
+
+// パフォーマンス計測結果をクリアするメソッドの実装
+void TouchData::clearPerformanceMeasurements() {
+    perfMeasurements.clear();
+}
+
+
 // ★ 追加: setProcessPage メソッド
 void TouchData::setProcessPage(String pageName){
+    unsigned long start_time = micros(); // 計測開始
+
     if (vData == nullptr) {
         debugLog.printlnLog(Debug::error, "setProcessPage: vData is nullptr. Cannot set process page.");
         return;
@@ -56,6 +75,7 @@ void TouchData::setProcessPage(String pageName){
         }
         processPage = newPage; // 作成した新しいオブジェクトを processPage に設定
     }
+    perfMeasurements.push_back({"setProcessPage", micros() - start_time});
 }
 
 
@@ -151,6 +171,8 @@ JsonObject TouchData::createOrGetProcess(String pageName, String processName){
  * @return true / false （成功 / 失敗）
  */
 bool TouchData::setTemplateProcess (String pageName, String processName, String objectName, touchType type, bool enableOverBorder, bool returnCurrentOver){
+  unsigned long start_time = micros(); // 計測開始
+
   if (vData == nullptr) {
     debugLog.printlnLog(Debug::error, "vData is nullptr");
     return false;
@@ -184,6 +206,7 @@ bool TouchData::setTemplateProcess (String pageName, String processName, String 
     default:
       break;
   }
+  perfMeasurements.push_back({"setTemplateProcess (" + processName + ")", micros() - start_time});
   return true;
 }
 
@@ -253,6 +276,8 @@ bool TouchData::setMultiClickedProcess (String pageName, String processName, Str
 
 
 bool TouchData::enableProcess(bool isPress) {
+  unsigned long start_time = micros(); // 計測開始
+
   enabledProcessList.clear();
   enabledDoc.clear();
   enabledProcessList = enabledDoc.to<JsonObject>(); // 再度紐付け (念のため)
@@ -307,10 +332,13 @@ bool TouchData::enableProcess(bool isPress) {
     }
   }
   debugLog.printlnLog(Debug::info, "TouchData::enableProcess - Finished checking processes.");
+  perfMeasurements.push_back({"enableProcess", micros() - start_time});
   return true;
 }
 
 bool TouchData::disableProcessType(touchType tType){
+  unsigned long start_time = micros(); // 計測開始
+
   if(processPage.isNull()) {
     debugLog.printlnLog(Debug::error, "[ERROR] disableProcessType: processPage is null. Returning false."); // DebugLogを使用
     return false;
@@ -331,34 +359,41 @@ bool TouchData::disableProcessType(touchType tType){
   }
 
   for (const String& key : keysToRemove) {
-      enabledProcessList.remove(key);
-      debugLog.printlnLog(Debug::success, "TouchData::disableProcessType - Disabled process: " + key); // ログ追加
+    enabledProcessList.remove(key);
+    debugLog.printlnLog(Debug::success, "TouchData::disableProcessType - Disabled process: " + key); // ログ追加
   }
+  perfMeasurements.push_back({"disableProcessType (" + String(static_cast<int>(tType)) + ")", micros() - start_time});
   return true;
 }
 
 bool TouchData::disableProcess(String processName){
+  unsigned long start_time = micros(); // 計測開始
   enabledProcessList.remove(processName);
   debugLog.printlnLog(Debug::success, "TouchData::disableProcess - Disabled specific process: " + processName); // ログ追加
+  perfMeasurements.push_back({"disableProcess (" + processName + ")", micros() - start_time});
   return true;
 }
 
 #define SWITCH_CASE(type, action) case type: action break;
 
 bool TouchData::judgeProcess(uint32_t x, uint32_t y){
+  unsigned long func_start_time = micros(); // judgeProcess全体の計測開始
   debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Judging touch at X: " + String(x) + ", Y: " + String(y));
 
   if (processPage.isNull()) {
       debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: processPage is null. Cannot judge process. Returning false."); 
+      perfMeasurements.push_back({"judgeProcess (processPage null)", micros() - func_start_time});
       return false;
   }
   if (enabledProcessList.isNull()) {
       debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: enabledProcessList is null. Cannot judge process. Returning false."); 
+      perfMeasurements.push_back({"judgeProcess (enabledProcessList null)", micros() - func_start_time});
       return false;
   }
   if (enabledProcessList.size() == 0) {
       debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - No enabled processes to check. currentProcessName cleared."); // ログ追加
       currentProcessName = "";
+      perfMeasurements.push_back({"judgeProcess (no enabled processes)", micros() - func_start_time});
       return false;
   }
 
@@ -370,8 +405,11 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
   };
   std::vector<HitProcessInfo> hitProcesses;
 
+  unsigned long loop_total_time = 0;
   for(JsonPair process : enabledProcessList){
-    judgeSprite->clear(BLACK);
+    unsigned long obj_start_time = micros(); // オブジェクトごとの計測開始
+
+    judgeSprite->clear(BLACK); // 各オブジェクトの描画前にスプライトをクリア
 
     String processName = process.key().c_str();
     JsonObject processData = process.value().as<JsonObject>();
@@ -400,6 +438,7 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
 
     debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Drawing object '" + objectName + "' for process '" + processName + "' (ZIndex: " + String(zIndex) + ")"); // ログ追加
 
+    unsigned long draw_start_time = micros(); // 描画処理の計測開始
     switch(type){
       SWITCH_CASE(VisualData::DrawType::DrawPixel, {
         judgeSprite->drawPixel(args[0].as<int32_t>(), args[1].as<int32_t>(), WHITE);
@@ -483,41 +522,61 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
         debugLog.printlnLog(Debug::error, "[ERROR] Unknown or unimplemented draw type for touch check.");
         break;
     }
+    perfMeasurements.push_back({"  Object Draw '" + objectName + "'", micros() - draw_start_time});
 
     // ★ ここでタッチがヒットしたかチェック
+    unsigned long read_start_time = micros(); // readPixelの計測開始
     int color = judgeSprite->readPixel(x, y);
+    perfMeasurements.push_back({"  readPixel '" + objectName + "'", micros() - read_start_time});
+
     if (color != BLACK) {
       hitProcesses.push_back({processName, objectName, zIndex, processType}); // processTypeも保存
       debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - HIT! Process: " + processName + ", Object: " + objectName + ", ZIndex: " + String(zIndex)); // ヒットログ
     } else {
       debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - MISS. Process: " + processName + ", Object: " + objectName); // ミスログ
     }
+    loop_total_time += (micros() - obj_start_time); // オブジェクトごとの合計時間を加算
   }
+  perfMeasurements.push_back({"judgeProcess (Object Loop Total)", loop_total_time});
   
   if (!hitProcesses.empty()) {
-
+    unsigned long sort_start_time = micros(); // ソートの計測開始
     std::sort(hitProcesses.begin(), hitProcesses.end(), [&](const HitProcessInfo& a, const HitProcessInfo& b) {
         if (a.zIndex != b.zIndex) {
-            return a.zIndex < b.zIndex; // ZIndexが大きい方が優先（降順）
+            return a.zIndex > b.zIndex; // ZIndexが大きい方が優先（降順）
         }
         return false; // ZIndexが同じ場合は順序を維持（または変更しない）
     });
+    perfMeasurements.push_back({"  HitProcess Sort", micros() - sort_start_time});
 
-    currentProcessName = hitProcesses.back().processName; 
-    debugLog.printlnLog(Debug::success, "TouchData::judgeProcess - Found active process: " + currentProcessName + " (Object: " + hitProcesses[0].objectName + ", ZIndex: " + String(hitProcesses[0].zIndex) + ")"); // 最終判定ログ
+    currentProcessName = hitProcesses.front().processName; // ★ front() に変更: 降順ソートなので一番最初の要素が最前面
+    debugLog.printlnLog(Debug::success, "TouchData::judgeProcess - Found active process: " + currentProcessName + " (Object: " + hitProcesses.front().objectName + ", ZIndex: " + String(hitProcesses.front().zIndex) + ")"); // 最終判定ログ
+    
+    perfMeasurements.push_back({"judgeProcess (Total)", micros() - func_start_time});
     return true;
   }
 
   currentProcessName = "";
   debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - No process found for current touch. currentProcessName cleared."); // ログ追加
+  perfMeasurements.push_back({"judgeProcess (No Process Found)", micros() - func_start_time});
   return false;
 }
 
 bool TouchData::update(){
+  unsigned long func_start_time = micros(); // update全体の計測開始
   debugLog.printlnLog(Debug::info, "TouchData::update - Starting touch update cycle.");
+
+  clearPerformanceMeasurements(); // 各更新サイクル開始時にクリア
 
   if(!M5.Touch.isEnabled()){
     debugLog.printlnLog(Debug::error, "Touch sensor is disabled. Returning false.");
+    perfMeasurements.push_back({"update (Touch Disabled)", micros() - func_start_time});
+    // --- パフォーマンス計測結果の出力 ---
+    debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
+    for (const auto& entry : perfMeasurements) {
+        debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
+    }
+    debugLog.printlnLog(Debug::info, "------------------------------");
     return false;
   }
   
@@ -527,14 +586,24 @@ bool TouchData::update(){
 
   if(processPage.isNull()){
     debugLog.printlnLog(Debug::error, "[ERROR] TouchData::update - processPage is null after setProcessPage. This is the source of the error.");
+    perfMeasurements.push_back({"update (ProcessPage Null)", micros() - func_start_time});
+    // --- パフォーマンス計測結果の出力 ---
+    debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
+    for (const auto& entry : perfMeasurements) {
+        debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
+    }
+    debugLog.printlnLog(Debug::info, "------------------------------");
     return false;
   }
 
+  unsigned long getDetail_start_time = micros(); // getDetail計測開始
   auto t = M5.Touch.getDetail(); // M5.Touch.getDetail() を使用して詳細なタッチ情報を取得
+  perfMeasurements.push_back({"M5.Touch.getDetail()", micros() - getDetail_start_time});
   
   // タッチの状態に基づいてプロセスを有効化
   // 例えば、指が押されている間はPress/Holding系のプロセスを有効化し、
   // 指が離された瞬間はRelease/Clicked/Flicked系のプロセスを有効化
+  unsigned long enable_disable_block_start_time = micros();
   if (t.wasPressed()) {
       enableProcess(true); // Pressイベント時に有効になるプロセスを有効化
       debugLog.printlnLog(Debug::info, "TouchData::update - M5.Touch isPressed: true. Enabling Press-related processes.");
@@ -545,10 +614,19 @@ bool TouchData::update(){
       // タッチがない、またはホールド中だが新しいイベントが発生していない場合
       debugLog.printlnLog(Debug::info, "TouchData::update - No new touch event (isPressed/isReleased). Current touch state: Holding=" + String(t.isHolding()) + ", Pressed=" + String(t.isPressed()));
       currentProcessName = ""; // イベントがない場合はプロセス名をクリア
+      perfMeasurements.push_back({"update (No New Event)", micros() - func_start_time});
+      // --- パフォーマンス計測結果の出力 ---
+      debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
+      for (const auto& entry : perfMeasurements) {
+          debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
+      }
+      debugLog.printlnLog(Debug::info, "------------------------------");
       return false; // アクティブなプロセスがないのでfalseを返す
   }
+  perfMeasurements.push_back({"Enable/Disable Decision Block", micros() - enable_disable_block_start_time});
 
 
+  unsigned long disable_process_types_start_time = micros();
   if(t.isPressed()){ // isPressed が true の場合のみ、Flick/Hold/Drag の開始判定を行う
     if(t.wasFlickStart()){
       debugLog.printlnLog(Debug::info, "TouchData::update - Flick start detected. Disabling Hold/Drag/Click processes.");
@@ -575,14 +653,26 @@ bool TouchData::update(){
       }
     }
   }
+  perfMeasurements.push_back({"Disable Process Types Logic", micros() - disable_process_types_start_time});
   
   // M5.Touch.getDetail() で取得した座標を使用
+  unsigned long judge_start_time = micros(); // judgeProcess計測開始
   bool judged = judgeProcess(t.x, t.y);
+  perfMeasurements.push_back({"judgeProcess()", micros() - judge_start_time});
   
   // リリース時の追加処理は、enableProcess(false) で既にカバーされている
   // ここで currentProcessName がセットされるので、呼び出し元はそれを見れば良い
   
   debugLog.printlnLog(Debug::info, "TouchData::update - Finished touch update cycle. Judged: " + String(judged));
+  perfMeasurements.push_back({"update (Total)", micros() - func_start_time});
+
+  // --- パフォーマンス計測結果の出力 ---
+  debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
+  for (const auto& entry : perfMeasurements) {
+      debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
+  }
+  debugLog.printlnLog(Debug::info, "------------------------------");
+
   return judged; // judgeProcessの結果を直接返す
 }
 
