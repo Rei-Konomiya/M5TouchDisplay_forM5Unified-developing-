@@ -15,7 +15,7 @@
 #include "VisualDataSet.h"
 
 class VisualData{
-
+    
 };
 
 #endif // VISUAL_DATA_HPP
