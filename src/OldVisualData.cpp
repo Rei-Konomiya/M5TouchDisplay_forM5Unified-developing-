@@ -3,10 +3,10 @@
   ・エラーログだけでなく作成ログ、削除ログなどの出力
   ・オブジェクト削除時、接続が完全に消えたかの確認
 */
-#include "VisualData.hpp"
+#include "OldVisualData.hpp"
 
 // コンストラクタ
-VisualData::VisualData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
+OldVisualData::OldVisualData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
   debugLog.setDebug(enableErrorLog, enableInfoLog, enableSuccessLog);
   clipSprite = new LGFX_Sprite(parent);
 }
@@ -15,7 +15,7 @@ VisualData::VisualData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoL
  * @brief 描画データの全容を返す
  * @return 全体描画データ
  */
-JsonDocument VisualData::getVisualData (){
+JsonDocument OldVisualData::getVisualData (){
   String jsonString;
   serializeJson(visualData, jsonString);
   debugLog.printlnLog(debugLog.info, jsonString);
@@ -27,7 +27,7 @@ JsonDocument VisualData::getVisualData (){
  * @param pageName ページ名
  * @return JsonObject（存在すればページデータ、存在しなければ空）
  */
-JsonObject VisualData::getPageData(String pageName){
+JsonObject OldVisualData::getPageData(String pageName){
   return visualData[pageName];
 };
 
@@ -37,7 +37,7 @@ JsonObject VisualData::getPageData(String pageName){
  * @param objectName オブジェクト名
  * @return JsonObject（存在すればそのオブジェクトのデータ）
  */
-JsonObject VisualData::getObjectData(String pageName, String objectName){
+JsonObject OldVisualData::getObjectData(String pageName, String objectName){
   return visualData[pageName][objectName];
 };
 
@@ -46,7 +46,7 @@ JsonObject VisualData::getObjectData(String pageName, String objectName){
  * @param pageName 検索するページ名
  * @return ある=true : ない=false
  */
-bool VisualData::isExistsPage (String pageName){
+bool OldVisualData::isExistsPage (String pageName){
   return visualData[pageName].is<JsonObject>();
 }
 
@@ -55,7 +55,7 @@ bool VisualData::isExistsPage (String pageName){
  * @param objectName 検索するオブジェクト名
  * @return ある=true : ない=false
  */
-bool VisualData::isExistsObject (String objectName){
+bool OldVisualData::isExistsObject (String objectName){
   return (*editingPage)[objectName].is<JsonObject>();
 }
 
@@ -65,7 +65,7 @@ bool VisualData::isExistsObject (String objectName){
  * @param objectName 検索するオブジェクト名
  * @return 0/1/2 (ページ無 / ページ有・オブジェクト無 / ページ有・オブジェクト有)
  */
-bool VisualData::isExistsObjectToPage (String pageName, String objectName){
+bool OldVisualData::isExistsObjectToPage (String pageName, String objectName){
   if(isExistsPage(pageName)){
     return visualData[pageName][objectName].is<JsonObject>();
   }
@@ -78,7 +78,7 @@ bool VisualData::isExistsObjectToPage (String pageName, String objectName){
  * @param keyName 検索するオブジェクト名
  * @return ある=true : ない=false
  */
-bool VisualData::isExistsKey (String objectName, String keyName){
+bool OldVisualData::isExistsKey (String objectName, String keyName){
   if(isExistsObject(objectName)){
   (*editingPage)[objectName].is<JsonObject>();
     return false;
@@ -90,7 +90,7 @@ bool VisualData::isExistsKey (String objectName, String keyName){
  * @brief 編集中のページがあるかどうかを返す
  * @return ある=true : ない=false
  */
-bool VisualData::isSetEditingPage (){
+bool OldVisualData::isSetEditingPage (){
   return editingPage != nullptr;
 }
 
@@ -99,7 +99,7 @@ bool VisualData::isSetEditingPage (){
  * @param pageName ページ名
  * @return 成功=true : 失敗=false
  */
-bool VisualData::addPage (String pageName) {
+bool OldVisualData::addPage (String pageName) {
   JsonObject page = visualData[pageName].to<JsonObject>();
   *editingPage = page;
   objectNum = 0;
@@ -111,7 +111,7 @@ bool VisualData::addPage (String pageName) {
  * @param pageName ページ名
  * @return 成功=true : 失敗=false
  */
-bool VisualData::changeSettingPage (String pageName){
+bool OldVisualData::changeSettingPage (String pageName){
   if(visualData[pageName].is<JsonObject>()){
     (*editingPage) = visualData[pageName];
   }
@@ -123,7 +123,7 @@ bool VisualData::changeSettingPage (String pageName){
 //  * @param objectName オブジェクト名
 //  * @return 成功=true : 失敗=false
 //  */
-// bool VisualData::setParentObject(String objectName, String parentName){
+// bool OldVisualData::setParentObject(String objectName, String parentName){
 //   if(!isExistsObject(objectName)){
 //     debugLog.printlnLog(objectName +" does not exist. Please create the object first.");
 //     return false;
@@ -147,7 +147,7 @@ bool VisualData::changeSettingPage (String pageName){
   子の各座標に親基準座標を足す
 */
 
-uint8_t VisualData::checkCreatable (String objectName){
+uint8_t OldVisualData::checkCreatable (String objectName){
   if(!isSetEditingPage()){
     debugLog.printlnLog(debugLog.error, "[Editing Page] does not exist (Please set the page)");
     return 0;
@@ -192,7 +192,7 @@ uint8_t VisualData::checkCreatable (String objectName){
  * @param pageName ページ名
  * @return 成功=true, 失敗=false
  */
-bool VisualData::deletePage (String pageName){
+bool OldVisualData::deletePage (String pageName){
   if(!isExistsPage(pageName)){
     debugLog.printlnLog(debugLog.error, "["+ pageName +"] does not exist.");
     return false;
@@ -211,7 +211,7 @@ bool VisualData::deletePage (String pageName){
  * @param objectName オブジェクト名
  * @return 成功=true, 失敗=false
  */
-bool VisualData::deleteObject (String objectName){
+bool OldVisualData::deleteObject (String objectName){
   if(!isExistsObject(objectName)){
     debugLog.printlnLog(debugLog.error, "["+ objectName +"] does not exist.");
     return false;
@@ -243,7 +243,7 @@ bool VisualData::deleteObject (String objectName){
  * @param zindex 描画順
  * @return 成功=true, 失敗=false
  */
-bool VisualData::createTemplateObject (String objectName, int drawType, std::initializer_list<int> argsList, uint8_t zindex){
+bool OldVisualData::createTemplateObject (String objectName, int drawType, std::initializer_list<int> argsList, uint8_t zindex){
   uint8_t mode = checkCreatable(objectName);
   if(mode){
     JsonObject obj;
@@ -274,61 +274,61 @@ bool VisualData::createTemplateObject (String objectName, int drawType, std::ini
   return false; // モードが0の場合など、失敗時はfalseを返す
 }
 
-bool VisualData::setDrawPixelObject (String objectName, int32_t x, int32_t y, int color, uint8_t zindex){
+bool OldVisualData::setDrawPixelObject (String objectName, int32_t x, int32_t y, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawPixel), {x, y, color}, zindex);
 }
-bool VisualData::setDrawLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int color, uint8_t zindex){
+bool OldVisualData::setDrawLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawLine), {x0, y0, x1, y1, color}, zindex);
 }
-bool VisualData::setDrawBezierObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zindex){
+bool OldVisualData::setDrawBezierObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawBezier), {x0, y0, x1, y1, x2, y2, color}, zindex);
 }
-bool VisualData::setDrawWideLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, int color, uint8_t zindex){
+bool OldVisualData::setDrawWideLineObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawWideLine), {x0, y0, x1, y1, r, color}, zindex);
 }
 
-bool VisualData::setDrawRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zindex){
+bool OldVisualData::setDrawRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawRect), {x, y, w, h, color}, zindex);
 }
-bool VisualData::setFillRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zindex){
+bool OldVisualData::setFillRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillRect), {x, y, w, h, color}, zindex);
 }
-bool VisualData::setDrawRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zindex){
+bool OldVisualData::setDrawRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawRoundRect), {x, y, w, h, r, color}, zindex);
 }
-bool VisualData::setFillRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zindex){
+bool OldVisualData::setFillRoundRectObject (String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillRoundRect), {x, y, w, h, r, color}, zindex);
 }
 
-bool VisualData::setDrawCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zindex){
+bool OldVisualData::setDrawCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawCircle), {x, y, r, color}, zindex);
 }
-bool VisualData::setFillCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zindex){
+bool OldVisualData::setFillCircleObject (String objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillCircle), {x, y, r, color}, zindex);
 }
-bool VisualData::setDrawEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zindex){
+bool OldVisualData::setDrawEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawEllipse), {x, y, rx, ry, color}, zindex);
 }
-bool VisualData::setFillEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zindex){
+bool OldVisualData::setFillEllipseObject (String objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillEllipse), {x, y, rx, ry, color}, zindex);
 }
-bool VisualData::setDrawTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color, uint8_t zindex){
+bool OldVisualData::setDrawTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::DrawTriangle), {x0, y0, x1, y1, x2, y2, color}, zindex);
 }
-bool VisualData::setFillTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color, uint8_t zindex){
+bool OldVisualData::setFillTriangleObject (String objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2 , int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x0, y0, x1, y1, x2, y2, color}, zindex);
 }
 
-bool VisualData::setDrawArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
+bool OldVisualData::setDrawArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0, r1, angle0, angle1, color}, zindex);
 }
-bool VisualData::setFillArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
+bool OldVisualData::setFillArcObject (String objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0, r1, angle0, angle1, color}, zindex);
 }
-bool VisualData::setDrawEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
+bool OldVisualData::setDrawEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0x, r1x, r0y, r1y, angle0, angle1, color}, zindex);
 }
-bool VisualData::setFillEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
+bool OldVisualData::setFillEllipseArcObject (String objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zindex){
   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x, y, r0x, r1x, r0y, r1y, angle0, angle1, color}, zindex);
 }
 
@@ -347,7 +347,7 @@ bool VisualData::setFillEllipseArcObject (String objectName, int32_t x, int32_t 
  * @param zindex 描画順
  * @return 成功=true, 失敗=false
  */
-bool VisualData::setDrawJpgFileObject (String objectName,dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale, uint8_t zindex){
+bool OldVisualData::setDrawJpgFileObject (String objectName,dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, lgfx::v1::jpeg_div::jpeg_div_t scale, uint8_t zindex){
   uint8_t mode = checkCreatable(objectName);
   if(mode){
     JsonObject obj;
@@ -403,7 +403,7 @@ bool VisualData::setDrawJpgFileObject (String objectName,dataType dataSource, co
  * @param zindex 描画順
  * @return 成功=true, 失敗=false
  */
-bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y, uint8_t zindex){
+bool OldVisualData::setDrawPngFileObject (String objectName, dataType dataSource, const char *path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scale_x, float scale_y, uint8_t zindex){
   uint8_t mode = checkCreatable(objectName);
   if(mode){
     JsonObject obj;
@@ -444,12 +444,12 @@ bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, c
   return false; // モードが0の場合など、失敗時はfalseを返す
 }
 
-// bool VisualData::setDrawStringObject (String objectName, String text, int32_t x, int32_t y, int color, int bgcolor, uint8_t datum){
+// bool OldVisualData::setDrawStringObject (String objectName, int32_t x, int32_t y, String text, int color, int bgcolor, uint8_t datum){
 //   return createTemplateObject(objectName, static_cast<int>(DrawType::FillTriangle), {x0, y0, x1, y1, x2, y2, color}, zindex);
 // }
 
-// bool VisualData::setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
-// bool VisualData::setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
+// bool OldVisualData::setFlexBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h);
+// bool OldVisualData::setTableBoxObject(String objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t grid_x, int32_t grid_y);
 
 // 並べるときの余白
 /*
@@ -467,7 +467,7 @@ bool VisualData::setDrawPngFileObject (String objectName, dataType dataSource, c
  * @brief 現在描画対象のページ名を取得
  * @return ページ名
  */
-String VisualData::getDrawingPage (){
+String OldVisualData::getDrawingPage (){
   return drawingPageName;
 }
 
@@ -480,7 +480,7 @@ String VisualData::getDrawingPage (){
  * @param args 引数配列
  * @return 成功=true, 失敗=false
  */
-bool VisualData::drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args){
+bool OldVisualData::drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args){
   debugLog.printLog(debugLog.none, "\t\ttype: ");
   switch (type) {
     SWITCH_CASE(DrawType::DrawPixel, {
@@ -609,7 +609,7 @@ bool VisualData::drawObject(LGFX_Sprite &sprite, DrawType type, JsonArray args){
  * @param pageName ページ名
  * @return 成功=true, 失敗=false
  */
-bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
+bool OldVisualData::drawPage (LGFX_Sprite &sprite, String pageName){
   if(visualData[pageName].is<JsonObject>()){
     drawingPageName = pageName;
   }else{
@@ -660,7 +660,7 @@ bool VisualData::drawPage (LGFX_Sprite &sprite, String pageName){
 }
 
 /*
-bool VisualData::getPageData (LGFX_Sprite &sprite, String fileName) {
+bool OldVisualData::getPageData (LGFX_Sprite &sprite, String fileName) {
   String path = "/pageData/" + fileName + ".png";
 
   if (!SD.exists(path)) return false;
@@ -681,7 +681,7 @@ bool VisualData::getPageData (LGFX_Sprite &sprite, String fileName) {
  * @param fileName ファイル名（拡張子不要）
  * @return 成功=true, 失敗=false
  */
-bool VisualData::screenShot (LGFX_Sprite &sprite, String fileName){
+bool OldVisualData::screenShot (LGFX_Sprite &sprite, String fileName){
   bool result = false;
   size_t pngSize = 0;
 

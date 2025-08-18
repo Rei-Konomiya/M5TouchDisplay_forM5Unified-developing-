@@ -1,17 +1,17 @@
-// TouchData.hpp
+// OldTouchData.hpp
 
-#ifndef TOUCH_DATA_HPP
-#define TOUCH_DATA_HPP
+#ifndef OLD_TOUCH_DATA_HPP
+#define OLD_TOUCH_DATA_HPP
 
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <vector> // std::vector を使用
 #include <algorithm> // std::sort を使用
 #include <ArduinoJson.h> // ArduinoJson ライブラリを使用
-#include "VisualData.hpp"
+#include "OldVisualData.hpp"
 #include "SerialDebug.h" // DebugLog クラスを使用
 
-// TouchData.hpp で定義
+// OldTouchData.hpp で定義
 enum class touchType {
     None,
     Press,       // 押された瞬間
@@ -38,9 +38,9 @@ struct PerformanceMeasurement {
     unsigned long duration_us;
 };
 
-class TouchData {
+class OldTouchData {
 private:
-    VisualData* vData;
+    OldVisualData* vData;
     LovyanGFX* parent;
     LGFX_Sprite* judgeSprite;
 
@@ -68,8 +68,8 @@ private:
     void clearPerformanceMeasurements();
 
 public:
-    TouchData(VisualData* vData, LovyanGFX* parent, bool enableErrorLog = false, bool enableInfoLog = false, bool enableSuccessLog = false);
-    ~TouchData(); // デストラクタ
+    OldTouchData(OldVisualData* vData, LovyanGFX* parent, bool enableErrorLog = false, bool enableInfoLog = false, bool enableSuccessLog = false);
+    ~OldTouchData(); // デストラクタ
 
     void setProcessPage(String pageName);
 
@@ -106,4 +106,4 @@ public:
     bool wasOverBorder();
 };
 
-#endif // TOUCH_DATA_HPP
+#endif // OLD_TOUCH_DATA_HPP

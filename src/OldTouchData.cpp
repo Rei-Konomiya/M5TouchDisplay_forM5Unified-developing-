@@ -1,11 +1,11 @@
-// TouchData.cpp
+// OldTouchData.cpp
 
-#include "TouchData.hpp"
+#include "OldTouchData.hpp"
 
 /** * コンストラクタ
  * @brief Sprite作成用親データの取得と、各種シリアルデバッグログの任意許可
  */
-TouchData::TouchData (VisualData* vData, LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
+OldTouchData::OldTouchData (OldVisualData* vData, LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
   debugLog.setDebug(enableErrorLog, enableInfoLog, enableSuccessLog); 
   this->vData = vData;
   this->parent = parent;
@@ -30,7 +30,7 @@ TouchData::TouchData (VisualData* vData, LovyanGFX* parent, bool enableErrorLog,
 }
 
 // デストラクタ
-TouchData::~TouchData() {
+OldTouchData::~OldTouchData() {
     if (judgeSprite != nullptr) {
         judgeSprite->deleteSprite(); // LGFX_SpriteのdeleteSprite()を呼び出す
         delete judgeSprite; // ポインタを解放
@@ -39,13 +39,13 @@ TouchData::~TouchData() {
 }
 
 // パフォーマンス計測結果をクリアするメソッドの実装
-void TouchData::clearPerformanceMeasurements() {
+void OldTouchData::clearPerformanceMeasurements() {
     perfMeasurements.clear();
 }
 
 
 // ★ 追加: setProcessPage メソッド
-void TouchData::setProcessPage(String pageName){
+void OldTouchData::setProcessPage(String pageName){
     unsigned long start_time = micros(); // 計測開始
 
     if (vData == nullptr) {
@@ -63,14 +63,14 @@ void TouchData::setProcessPage(String pageName){
     if(processList[pageName].is<JsonObject>()){
         // 存在すれば、そのページをprocessPageとして設定
         processPage = processList[pageName].as<JsonObject>();
-        debugLog.printlnLog(Debug::info, "TouchData::setProcessPage - Process page set to: " + pageName + " (Found existing page)."); // ログ修正
+        debugLog.printlnLog(Debug::info, "OldTouchData::setProcessPage - Process page set to: " + pageName + " (Found existing page)."); // ログ修正
     } else {
         // 存在しない場合は、新しくそのページのエントリをprocessListに作成し、それをprocessPageとして設定
-        debugLog.printlnLog(Debug::info, "TouchData::setProcessPage - Page '" + pageName + "' not found in processList. Creating new empty page entry."); // ログ修正
+        debugLog.printlnLog(Debug::info, "OldTouchData::setProcessPage - Page '" + pageName + "' not found in processList. Creating new empty page entry."); // ログ修正
         // ★ 修正: createNestedObject の代わりに to<JsonObject>() を使用
         JsonObject newPage = processList[pageName].to<JsonObject>(); 
         if (newPage.isNull()) {
-            debugLog.printlnLog(Debug::error, "TouchData::setProcessPage - Failed to create new page object for: " + pageName + ". Memory issue?"); // ログ修正
+            debugLog.printlnLog(Debug::error, "OldTouchData::setProcessPage - Failed to create new page object for: " + pageName + ". Memory issue?"); // ログ修正
             return; // 作成に失敗したら処理を中断
         }
         processPage = newPage; // 作成した新しいオブジェクトを processPage に設定
@@ -84,7 +84,7 @@ void TouchData::setProcessPage(String pageName){
  * @param pageName プロセスリストをチェックするページの識別名
  * @return 存在すればtrue、しなければfalse
  */
-bool TouchData::isExistsProcessPage (String pageName){
+bool OldTouchData::isExistsProcessPage (String pageName){
   bool exists = processList[pageName].is<JsonObject>();
   return exists;
 }
@@ -95,7 +95,7 @@ bool TouchData::isExistsProcessPage (String pageName){
  * @param processName プロセス名
  * @return true/false (両方ある / どちらか、または両方が無い)
  */
-bool TouchData::isExistsProcess (String pageName, String processName){
+bool OldTouchData::isExistsProcess (String pageName, String processName){
   if(isExistsProcessPage(pageName)){
     bool exists = processList[pageName][processName].is<JsonObject>();
     return exists;
@@ -110,7 +110,7 @@ bool TouchData::isExistsProcess (String pageName, String processName){
  * @param type タッチ判定タイプ
  * @return あればプロセス名、無ければ空の文字列
  */
-String TouchData::isExistsProcessType(String pageName, String objectName, touchType type){
+String OldTouchData::isExistsProcessType(String pageName, String objectName, touchType type){
   if (!isExistsProcessPage(pageName)) {
       return "";
   }
@@ -128,7 +128,7 @@ String TouchData::isExistsProcessType(String pageName, String objectName, touchT
   return "";
 }
 
-JsonObject TouchData::createOrGetProcess(String pageName, String processName){
+JsonObject OldTouchData::createOrGetProcess(String pageName, String processName){
   // ページリストが無ければ作成
   if(!isExistsProcessPage(pageName)) {
     // ★ 修正: createNestedObject の代わりに to<JsonObject>() を使用
@@ -170,7 +170,7 @@ JsonObject TouchData::createOrGetProcess(String pageName, String processName){
  * @param returnCurrentOver （スワイプ専用）指が範囲外に出ていてもtrueを返すようにするかどうか
  * @return true / false （成功 / 失敗）
  */
-bool TouchData::setTemplateProcess (String pageName, String processName, String objectName, touchType type, bool enableOverBorder, bool returnCurrentOver){
+bool OldTouchData::setTemplateProcess (String pageName, String processName, String objectName, touchType type, bool enableOverBorder, bool returnCurrentOver){
   unsigned long start_time = micros(); // 計測開始
 
   if (vData == nullptr) {
@@ -211,56 +211,56 @@ bool TouchData::setTemplateProcess (String pageName, String processName, String 
 }
 
 // ... (setReleaseProcessなどの各種 setXxxProcess 関数は変更なし) ...
-bool TouchData::setReleaseProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setReleaseProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Release);
 }
-bool TouchData::setReleasingProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setReleasingProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Releasing);
 }
-bool TouchData::setPressProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setPressProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Press);
 }
-bool TouchData::setPressingProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setPressingProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Pressing);
 }
-bool TouchData::setPressedProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setPressedProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Pressed);
 }
 
-bool TouchData::setHoldProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setHoldProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Hold);
 }
-bool TouchData::setHoldingProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setHoldingProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Holding);
 }
-bool TouchData::setHeldProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setHeldProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Held);
 }
 
-bool TouchData::setFlickProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setFlickProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Flick);
 }
-bool TouchData::setFlickingProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
+bool OldTouchData::setFlickingProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
   return setTemplateProcess(pageName, processName, objectName, touchType::Flicking, enableOverBorder, returnCurrentOver);
 }
-bool TouchData::setFlickedProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
+bool OldTouchData::setFlickedProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
   return setTemplateProcess(pageName, processName, objectName, touchType::Flicked, enableOverBorder, returnCurrentOver);
 }
 
-bool TouchData::setDragProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setDragProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Drag);
 }
-bool TouchData::setDraggingProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
+bool OldTouchData::setDraggingProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
   return setTemplateProcess(pageName, processName, objectName, touchType::Dragging, enableOverBorder, returnCurrentOver);
 }
-bool TouchData::setDraggedProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
+bool OldTouchData::setDraggedProcess (String pageName, String processName, String objectName, bool enableOverBorder, bool returnCurrentOver){
   return setTemplateProcess(pageName, processName, objectName, touchType::Dragged, enableOverBorder, returnCurrentOver);
 }
 
-bool TouchData::setClickedProcess (String pageName, String processName, String objectName){
+bool OldTouchData::setClickedProcess (String pageName, String processName, String objectName){
   return setTemplateProcess(pageName, processName, objectName, touchType::Clicked);
 }
-bool TouchData::setMultiClickedProcess (String pageName, String processName, String objectName, int count){
+bool OldTouchData::setMultiClickedProcess (String pageName, String processName, String objectName, int count){
   if(setTemplateProcess(pageName, processName, objectName, touchType::MultiClicked)){
     // ここで processList[pageName][processName] が有効か確認
     JsonObject procObj = processList[pageName][processName].as<JsonObject>();
@@ -275,7 +275,7 @@ bool TouchData::setMultiClickedProcess (String pageName, String processName, Str
 }
 
 
-bool TouchData::enableProcess(bool isPress) {
+bool OldTouchData::enableProcess(bool isPress) {
   unsigned long start_time = micros(); // 計測開始
 
   enabledProcessList.clear();
@@ -287,7 +287,7 @@ bool TouchData::enableProcess(bool isPress) {
       return false;
   }
 
-  debugLog.printlnLog(Debug::info, "TouchData::enableProcess - Start checking processes for " + String(isPress ? "Press" : "Release") + " events.");
+  debugLog.printlnLog(Debug::info, "OldTouchData::enableProcess - Start checking processes for " + String(isPress ? "Press" : "Release") + " events.");
 
   for (JsonPair kv : processPage) {
     String procName = kv.key().c_str();
@@ -299,7 +299,7 @@ bool TouchData::enableProcess(bool isPress) {
     int type = procData["type"].as<int>();
     String objectName = procData["objectName"].as<String>(); // オブジェクト名も表示
 
-    debugLog.printlnLog(Debug::info, "TouchData::enableProcess - Checking process: " + procName + ", Object: " + objectName + ", Type: " + String(type));
+    debugLog.printlnLog(Debug::info, "OldTouchData::enableProcess - Checking process: " + procName + ", Object: " + objectName + ", Type: " + String(type));
 
     if (isPress) {
       if (type == static_cast<int>(touchType::Press)
@@ -317,7 +317,7 @@ bool TouchData::enableProcess(bool isPress) {
         || type == static_cast<int>(touchType::Clicked)
         || type == static_cast<int>(touchType::MultiClicked)) {
         enabledProcessList[procName] = procData;
-        debugLog.printlnLog(Debug::success, "TouchData::enableProcess - Enabled for Press: " + procName); // 有効化されたログ
+        debugLog.printlnLog(Debug::success, "OldTouchData::enableProcess - Enabled for Press: " + procName); // 有効化されたログ
       }
     } else { // isPress == false (つまりRelease時)
       if (type == static_cast<int>(touchType::Release)
@@ -327,16 +327,16 @@ bool TouchData::enableProcess(bool isPress) {
         || type == static_cast<int>(touchType::Flicked) // Flicked/DraggedもRelease時に有効化
         || type == static_cast<int>(touchType::Dragged)) {
         enabledProcessList[procName] = procData;
-        debugLog.printlnLog(Debug::success, "TouchData::enableProcess - Enabled for Release: " + procName); // 有効化されたログ
+        debugLog.printlnLog(Debug::success, "OldTouchData::enableProcess - Enabled for Release: " + procName); // 有効化されたログ
       }
     }
   }
-  debugLog.printlnLog(Debug::info, "TouchData::enableProcess - Finished checking processes.");
+  debugLog.printlnLog(Debug::info, "OldTouchData::enableProcess - Finished checking processes.");
   perfMeasurements.push_back({"enableProcess", micros() - start_time});
   return true;
 }
 
-bool TouchData::disableProcessType(touchType tType){
+bool OldTouchData::disableProcessType(touchType tType){
   unsigned long start_time = micros(); // 計測開始
 
   if(processPage.isNull()) {
@@ -354,31 +354,31 @@ bool TouchData::disableProcessType(touchType tType){
       int tTypeInt = processData["type"].as<int>();
       if(tTypeInt == static_cast<int>(tType)){
           keysToRemove.push_back(kv.key().c_str());
-          debugLog.printlnLog(Debug::info, "TouchData::disableProcessType - Marking for disable: " + String(kv.key().c_str()) + " (Type: " + String(tTypeInt) + ")"); // ログ追加
+          debugLog.printlnLog(Debug::info, "OldTouchData::disableProcessType - Marking for disable: " + String(kv.key().c_str()) + " (Type: " + String(tTypeInt) + ")"); // ログ追加
       }
   }
 
   for (const String& key : keysToRemove) {
     enabledProcessList.remove(key);
-    debugLog.printlnLog(Debug::success, "TouchData::disableProcessType - Disabled process: " + key); // ログ追加
+    debugLog.printlnLog(Debug::success, "OldTouchData::disableProcessType - Disabled process: " + key); // ログ追加
   }
   perfMeasurements.push_back({"disableProcessType (" + String(static_cast<int>(tType)) + ")", micros() - start_time});
   return true;
 }
 
-bool TouchData::disableProcess(String processName){
+bool OldTouchData::disableProcess(String processName){
   unsigned long start_time = micros(); // 計測開始
   enabledProcessList.remove(processName);
-  debugLog.printlnLog(Debug::success, "TouchData::disableProcess - Disabled specific process: " + processName); // ログ追加
+  debugLog.printlnLog(Debug::success, "OldTouchData::disableProcess - Disabled specific process: " + processName); // ログ追加
   perfMeasurements.push_back({"disableProcess (" + processName + ")", micros() - start_time});
   return true;
 }
 
 #define SWITCH_CASE(type, action) case type: action break;
 
-bool TouchData::judgeProcess(uint32_t x, uint32_t y){
+bool OldTouchData::judgeProcess(uint32_t x, uint32_t y){
   unsigned long func_start_time = micros(); // judgeProcess全体の計測開始
-  debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Judging touch at X: " + String(x) + ", Y: " + String(y));
+  debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Judging touch at X: " + String(x) + ", Y: " + String(y));
 
   if (processPage.isNull()) {
       debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: processPage is null. Cannot judge process. Returning false."); 
@@ -391,7 +391,7 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
       return false;
   }
   if (enabledProcessList.size() == 0) {
-      debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - No enabled processes to check. currentProcessName cleared."); // ログ追加
+      debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - No enabled processes to check. currentProcessName cleared."); // ログ追加
       currentProcessName = "";
       perfMeasurements.push_back({"judgeProcess (no enabled processes)", micros() - func_start_time});
       return false;
@@ -427,7 +427,7 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
         continue;
     }
 
-    VisualData::DrawType type = static_cast<VisualData::DrawType>(objectData["type"].as<int>());
+    OldVisualData::DrawType type = static_cast<OldVisualData::DrawType>(objectData["type"].as<int>());
     JsonArray args = objectData["args"].as<JsonArray>();
     if (args.isNull()) {
         debugLog.printlnLog(Debug::error, String("[ERROR] judgeProcess: args is null for object: ") + objectName); 
@@ -436,88 +436,88 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
 
     int zIndex = objectData["zIndex"].is<int>() ? objectData["zIndex"].as<int>() : 0;
 
-    debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Drawing object '" + objectName + "' for process '" + processName + "' (ZIndex: " + String(zIndex) + ")"); // ログ追加
+    debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Drawing object '" + objectName + "' for process '" + processName + "' (ZIndex: " + String(zIndex) + ")"); // ログ追加
 
     unsigned long draw_start_time = micros(); // 描画処理の計測開始
     switch(type){
-      SWITCH_CASE(VisualData::DrawType::DrawPixel, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawPixel, {
         judgeSprite->drawPixel(args[0].as<int32_t>(), args[1].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawLine, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawLine, {
         judgeSprite->drawLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawBezier, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawBezier, {
         judgeSprite->drawBezier(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawWideLine, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawWideLine, {
         judgeSprite->drawWideLine(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), WHITE);
       });
 
-      SWITCH_CASE(VisualData::DrawType::DrawRect, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawRect, {
         judgeSprite->fillRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawRoundRect, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawRoundRect, {
         judgeSprite->fillRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawTriangle, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawTriangle, {
         judgeSprite->fillTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawCircle, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawCircle, {
         judgeSprite->fillCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawEllipse, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawEllipse, {
         judgeSprite->fillEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawArc, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawArc, {
         judgeSprite->fillArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::DrawEllipseArc, {
+      SWITCH_CASE(OldVisualData::DrawType::DrawEllipseArc, {
         judgeSprite->fillEllipseArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), args[6].as<int32_t>(), args[7].as<int32_t>(), WHITE);
       });
 
-      SWITCH_CASE(VisualData::DrawType::FillRect, {
+      SWITCH_CASE(OldVisualData::DrawType::FillRect, {
         judgeSprite->fillRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::FillRoundRect, {
+      SWITCH_CASE(OldVisualData::DrawType::FillRoundRect, {
         judgeSprite->fillRoundRect(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::FillTriangle, {
+      SWITCH_CASE(OldVisualData::DrawType::FillTriangle, {
         judgeSprite->fillTriangle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::FillCircle, {
+      SWITCH_CASE(OldVisualData::DrawType::FillCircle, {
         judgeSprite->fillCircle(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::FillEllipse, {
+      SWITCH_CASE(OldVisualData::DrawType::FillEllipse, {
         judgeSprite->fillEllipse(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), WHITE);
       });
-      SWITCH_CASE(VisualData::DrawType::FillArc, {
+      SWITCH_CASE(OldVisualData::DrawType::FillArc, {
         judgeSprite->fillArc(args[0].as<int32_t>(), args[1].as<int32_t>(), args[2].as<int32_t>(), args[3].as<int32_t>(), args[4].as<int32_t>(), args[5].as<int32_t>(), WHITE);
       });
 
-      SWITCH_CASE(VisualData::DrawType::DrawJpgFile, {
-        debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Skipping DrawJpgFile for touch check.");
+      SWITCH_CASE(OldVisualData::DrawType::DrawJpgFile, {
+        debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Skipping DrawJpgFile for touch check.");
       });
-      SWITCH_CASE(VisualData::DrawType::DrawPngFile, {
-        debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Skipping DrawPngFile for touch check.");
+      SWITCH_CASE(OldVisualData::DrawType::DrawPngFile, {
+        debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Skipping DrawPngFile for touch check.");
       });
 
-      SWITCH_CASE(VisualData::DrawType::DrawString, {
-        debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Skipping DrawString for touch check.");
+      SWITCH_CASE(OldVisualData::DrawType::DrawString, {
+        debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Skipping DrawString for touch check.");
         // judgeSprite->setTextColor(WHITE, WHITE); 
         // judgeSprite->setTextDatum(args[5].as<uint8_t>()); 
         // judgeSprite->drawString(args[0].as<String>(), args[1].as<int32_t>(), args[2].as<int32_t>());
       });
 
-      SWITCH_CASE(VisualData::DrawType::ClipArc, {}); 
-      SWITCH_CASE(VisualData::DrawType::ClipEllipseArc, {});
-      SWITCH_CASE(VisualData::DrawType::ClipRect, {});
-      SWITCH_CASE(VisualData::DrawType::ClipRoundRect, {});
-      SWITCH_CASE(VisualData::DrawType::ClipCircle, {});
-      SWITCH_CASE(VisualData::DrawType::ClipEllipse, {});
-      SWITCH_CASE(VisualData::DrawType::ClipTriangle, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipArc, {}); 
+      SWITCH_CASE(OldVisualData::DrawType::ClipEllipseArc, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipRect, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipRoundRect, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipCircle, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipEllipse, {});
+      SWITCH_CASE(OldVisualData::DrawType::ClipTriangle, {});
 
-      SWITCH_CASE(VisualData::DrawType::FlexBox, { debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Skipping FlexBox for touch check."); });
-      SWITCH_CASE(VisualData::DrawType::TableBox, { debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - Skipping TableBox for touch check."); });
+      SWITCH_CASE(OldVisualData::DrawType::FlexBox, { debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Skipping FlexBox for touch check."); });
+      SWITCH_CASE(OldVisualData::DrawType::TableBox, { debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - Skipping TableBox for touch check."); });
       default:
         debugLog.printlnLog(Debug::error, "[ERROR] Unknown or unimplemented draw type for touch check.");
         break;
@@ -531,9 +531,9 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
 
     if (color != BLACK) {
       hitProcesses.push_back({processName, objectName, zIndex, processType}); // processTypeも保存
-      debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - HIT! Process: " + processName + ", Object: " + objectName + ", ZIndex: " + String(zIndex)); // ヒットログ
+      debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - HIT! Process: " + processName + ", Object: " + objectName + ", ZIndex: " + String(zIndex)); // ヒットログ
     } else {
-      debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - MISS. Process: " + processName + ", Object: " + objectName); // ミスログ
+      debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - MISS. Process: " + processName + ", Object: " + objectName); // ミスログ
     }
     loop_total_time += (micros() - obj_start_time); // オブジェクトごとの合計時間を加算
   }
@@ -550,21 +550,21 @@ bool TouchData::judgeProcess(uint32_t x, uint32_t y){
     perfMeasurements.push_back({"  HitProcess Sort", micros() - sort_start_time});
 
     currentProcessName = hitProcesses.front().processName; // ★ front() に変更: 降順ソートなので一番最初の要素が最前面
-    debugLog.printlnLog(Debug::success, "TouchData::judgeProcess - Found active process: " + currentProcessName + " (Object: " + hitProcesses.front().objectName + ", ZIndex: " + String(hitProcesses.front().zIndex) + ")"); // 最終判定ログ
+    debugLog.printlnLog(Debug::success, "OldTouchData::judgeProcess - Found active process: " + currentProcessName + " (Object: " + hitProcesses.front().objectName + ", ZIndex: " + String(hitProcesses.front().zIndex) + ")"); // 最終判定ログ
     
     perfMeasurements.push_back({"judgeProcess (Total)", micros() - func_start_time});
     return true;
   }
 
   currentProcessName = "";
-  debugLog.printlnLog(Debug::info, "TouchData::judgeProcess - No process found for current touch. currentProcessName cleared."); // ログ追加
+  debugLog.printlnLog(Debug::info, "OldTouchData::judgeProcess - No process found for current touch. currentProcessName cleared."); // ログ追加
   perfMeasurements.push_back({"judgeProcess (No Process Found)", micros() - func_start_time});
   return false;
 }
 
-bool TouchData::update(){
+bool OldTouchData::update(){
   unsigned long func_start_time = micros(); // update全体の計測開始
-  debugLog.printlnLog(Debug::info, "TouchData::update - Starting touch update cycle.");
+  debugLog.printlnLog(Debug::info, "OldTouchData::update - Starting touch update cycle.");
 
   clearPerformanceMeasurements(); // 各更新サイクル開始時にクリア
 
@@ -585,7 +585,7 @@ bool TouchData::update(){
   setProcessPage(drawingPageName); 
 
   if(processPage.isNull()){
-    debugLog.printlnLog(Debug::error, "[ERROR] TouchData::update - processPage is null after setProcessPage. This is the source of the error.");
+    debugLog.printlnLog(Debug::error, "[ERROR] OldTouchData::update - processPage is null after setProcessPage. This is the source of the error.");
     perfMeasurements.push_back({"update (ProcessPage Null)", micros() - func_start_time});
     // --- パフォーマンス計測結果の出力 ---
     debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
@@ -606,13 +606,13 @@ bool TouchData::update(){
   unsigned long enable_disable_block_start_time = micros();
   if (t.wasPressed()) {
       enableProcess(true); // Pressイベント時に有効になるプロセスを有効化
-      debugLog.printlnLog(Debug::info, "TouchData::update - M5.Touch isPressed: true. Enabling Press-related processes.");
+      debugLog.printlnLog(Debug::info, "OldTouchData::update - M5.Touch isPressed: true. Enabling Press-related processes.");
   } else if (t.wasReleased()) {
       enableProcess(false); // Releaseイベント時に有効になるプロセスを有効化
-      debugLog.printlnLog(Debug::info, "TouchData::update - M5.Touch isReleased: true. Enabling Release-related processes.");
+      debugLog.printlnLog(Debug::info, "OldTouchData::update - M5.Touch isReleased: true. Enabling Release-related processes.");
   } else {
       // タッチがない、またはホールド中だが新しいイベントが発生していない場合
-      debugLog.printlnLog(Debug::info, "TouchData::update - No new touch event (isPressed/isReleased). Current touch state: Holding=" + String(t.isHolding()) + ", Pressed=" + String(t.isPressed()));
+      debugLog.printlnLog(Debug::info, "OldTouchData::update - No new touch event (isPressed/isReleased). Current touch state: Holding=" + String(t.isHolding()) + ", Pressed=" + String(t.isPressed()));
       currentProcessName = ""; // イベントがない場合はプロセス名をクリア
       perfMeasurements.push_back({"update (No New Event)", micros() - func_start_time});
       // --- パフォーマンス計測結果の出力 ---
@@ -629,7 +629,7 @@ bool TouchData::update(){
   unsigned long disable_process_types_start_time = micros();
   if(t.isPressed()){ // isPressed が true の場合のみ、Flick/Hold/Drag の開始判定を行う
     if(t.wasFlickStart()){
-      debugLog.printlnLog(Debug::info, "TouchData::update - Flick start detected. Disabling Hold/Drag/Click processes.");
+      debugLog.printlnLog(Debug::info, "OldTouchData::update - Flick start detected. Disabling Hold/Drag/Click processes.");
       disableProcessType(touchType::Hold);
       disableProcessType(touchType::Holding);
       disableProcessType(touchType::Held);
@@ -639,14 +639,14 @@ bool TouchData::update(){
       disableProcessType(touchType::Clicked);
       disableProcessType(touchType::MultiClicked);
     }else if(t.wasHold()){
-      debugLog.printlnLog(Debug::info, "TouchData::update - Hold detected.");
+      debugLog.printlnLog(Debug::info, "OldTouchData::update - Hold detected.");
       disableProcessType(touchType::Flick);
       disableProcessType(touchType::Flicking);
       disableProcessType(touchType::Flicked);
       disableProcessType(touchType::Clicked);
       disableProcessType(touchType::MultiClicked);
       if(t.wasDragStart()){
-        debugLog.printlnLog(Debug::info, "TouchData::update - Drag start detected. Disabling Hold processes.");
+        debugLog.printlnLog(Debug::info, "OldTouchData::update - Drag start detected. Disabling Hold processes.");
         disableProcessType(touchType::Hold); 
         disableProcessType(touchType::Holding);
         disableProcessType(touchType::Held);
@@ -663,7 +663,7 @@ bool TouchData::update(){
   // リリース時の追加処理は、enableProcess(false) で既にカバーされている
   // ここで currentProcessName がセットされるので、呼び出し元はそれを見れば良い
   
-  debugLog.printlnLog(Debug::info, "TouchData::update - Finished touch update cycle. Judged: " + String(judged));
+  debugLog.printlnLog(Debug::info, "OldTouchData::update - Finished touch update cycle. Judged: " + String(judged));
   perfMeasurements.push_back({"update (Total)", micros() - func_start_time});
 
   // --- パフォーマンス計測結果の出力 ---
@@ -676,16 +676,16 @@ bool TouchData::update(){
   return judged; // judgeProcessの結果を直接返す
 }
 
-String TouchData::getCurrentProcess(){
+String OldTouchData::getCurrentProcess(){
   return currentProcessName;
 }
 
-bool TouchData::isOverBorder(){
+bool OldTouchData::isOverBorder(){
   // 現状では未実装または常にfalseを返す
   return false; 
 }
 
-bool TouchData::wasOverBorder(){
+bool OldTouchData::wasOverBorder(){
   // 現状では未実装または常にfalseを返す
   return false; 
 }

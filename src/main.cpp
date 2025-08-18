@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <M5Unified.h>
-#include "VisualData.hpp"
-#include "TouchData.hpp"
+#include "OldVisualData.hpp"
+#include "OldTouchData.hpp"
 
 const int cDepth_1  = 1;
 const int cDepth_8  = 8;
@@ -27,10 +27,10 @@ void initSprite(LGFX_Sprite &sprite, int colorDepth) {
 
 M5GFX lcd;
 LGFX_Sprite sprite1(&lcd);
-VisualData vData(&lcd, false, false, false);
+OldVisualData vData(&lcd, false, false, false);
 // TouchDataコンストラクタの第三引数以降はデバッグログの有効/無効を制御します
 // trueに設定すると、TouchData内部の処理ログが詳細に表示されます。
-TouchData tData(&vData, &lcd, true, true, true); 
+OldTouchData tData(&vData, &lcd, true, true, true); 
 
 String currentPage = "page1"; // 現在のアクティブページ
 
@@ -128,7 +128,7 @@ void loop() {
     tData.setProcessPage(currentPage); 
   }
 
-  if(tData.update()){ // TouchData の更新と判定を実行
+  if(tData.update()){ // OldTouchData の更新と判定を実行
     String proc = tData.getCurrentProcess();
     if(proc != "") {
       // 画面を一度クリアするか、描画するテキストの背景を塗りつぶすか検討
