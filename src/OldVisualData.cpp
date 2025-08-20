@@ -73,7 +73,7 @@ bool OldVisualData::isExistsObjectToPage (String pageName, String objectName){
 }
 
 /** @fn
- * @brief 指定のオブジェクトが現在編集中のページ内にあるかどうかを返す
+ * @brief 指定オブジェクト内の特定のパラメータがあるかを返す
  * @param objectName 検索するオブジェクト名
  * @param keyName 検索するオブジェクト名
  * @return ある=true : ない=false

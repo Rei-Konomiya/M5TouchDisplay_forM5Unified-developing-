@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <M5GFX.h>
+#include <vector>
 
 class VisualDataSet{
+public:
   enum class DrawType{
     DrawPixel,      // ピクセル 描画
     DrawLine,       // 直線 描画
@@ -48,22 +50,44 @@ class VisualDataSet{
 
 
 
-  struct PixelArgs      { int32_t x;  int32_t y;                                                  int color; };
-  struct LineArgs       { int32_t x0; int32_t y0; int32_t x1; int32_t y1;                         int color; };
-  struct BezierArgs     { int32_t x0; int32_t y0; int32_t x1; int32_t y1; int32_t x2; int32_t y2; int color; };
-  struct WideLineArgs   { int32_t x0; int32_t y0; int32_t x1; int32_t y1; int32_t r;              int color; };
+  struct PixelArgs      { int32_t x = 0;  int32_t y = 0;                                                                  int color = 0; };
+  struct LineArgs       { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0;                                 int color = 0; };
+  struct BezierArgs     { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t x2 = 0; int32_t y2 = 0; int color = 0; };
+  struct WideLineArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t r = 0;                  int color = 0; };
   
-  struct RectArgs       { int32_t x;  int32_t y;  int32_t w;  int32_t h;                          int color; };
-  struct RoundRectArgs  { int32_t x;  int32_t y;  int32_t w;  int32_t h;  int32_t r;              int color; };
+  struct RectArgs       { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;  int32_t h = 0;                                  int color = 0; };
+  struct RoundRectArgs  { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;  int32_t h = 0;  int32_t r = 0;                  int color = 0; };
 
-  struct CircleArgs     { int32_t x;  int32_t y;                          int32_t r;              int color; };
-  struct EllipseArgs    { int32_t x;  int32_t y;                          int32_t rx; int32_t ry; int color; };
-  struct TriangleArgs   { int32_t x0; int32_t y0; int32_t x1; int32_t y1; int32_t x2; int32_t y2; int color; };
+  struct CircleArgs     { int32_t x = 0;  int32_t y = 0;                                  int32_t r = 0;                  int color = 0; };
+  struct EllipseArgs    { int32_t x = 0;  int32_t y = 0;                                  int32_t rx = 0; int32_t ry = 0; int color = 0; };
+  struct TriangleArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t x2 = 0; int32_t y2 = 0; int color = 0; };
   
-  struct JpgFileArgs    { DataType dataSource; const char *path; int32_t x; int32_t y; int32_t maxWidth; int32_t maxHeight; int32_t offX; int32_t offY; lgfx::v1::jpeg_div::jpeg_div_t scale; uint8_t zindex; };
-  struct PngFileArgs    { DataType dataSource; const char *path; int32_t x; int32_t y; int32_t maxWidth; int32_t maxHeight; int32_t offX; int32_t offY; float scaleX; float scaleY;           uint8_t zindex; };
+  struct JpgFileArgs    {
+    DataType dataSource = DataType::SD;
+    const char *path = nullptr;
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t maxWidth = 0;
+    int32_t maxHeight = 0;
+    int32_t offX = 0;
+    int32_t offY = 0;
+    lgfx::v1::jpeg_div::jpeg_div_t scale = lgfx::v1::jpeg_div::JPEG_DIV_NONE;
+  };
 
-  struct StringArgs     { int32_t x; int32_t y; const char* text; int color; int bgcolor; };
+  struct PngFileArgs    {
+    DataType dataSource = DataType::SD;
+    const char *path = nullptr;
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t maxWidth = 0;
+    int32_t maxHeight = 0;
+    int32_t offX = 0;
+    int32_t offY = 0;
+    float scaleX = 0;
+    float scaleY = 0;
+  };
+
+  struct StringArgs { int32_t x = 0; int32_t y = 0; const char* text = nullptr; int color = 0; int bgcolor = 0; };
 
   union ObjectArgs{
     PixelArgs      pixel;
@@ -84,14 +108,29 @@ class VisualDataSet{
     StringArgs     text;
     
     ObjectArgs() {}
-    ~ObjectArgs() {}
   };
 
   struct ObjectData{
-    int objectNumber;
-    String objectName;
-    DrawType type;
+    int objectNum = -1;
+    String pageName = "";
+    DrawType type = DrawType::DrawPixel;
     ObjectArgs objectArgs;
-    uint8_t zindex;
+    uint8_t zIndex = 0;
+
+    bool isEmpty() const {
+      return objectNum == -1; // ダミーデータは pageNum = -1 として判定
+    }
   };
+
+  struct PageData{
+    int pageNum = -1;
+    String pageName = "";
+    std::vector<ObjectData> objects;
+
+    bool isEmpty() const {
+      return pageNum == -1; // ダミーデータは pageNum = -1 として判定
+    }
+  };
+
+  std::vector<PageData> pages;
 };
