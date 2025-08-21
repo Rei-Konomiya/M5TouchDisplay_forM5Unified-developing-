@@ -50,17 +50,20 @@ public:
 
 
 
-  struct PixelArgs      { int32_t x = 0;  int32_t y = 0;                                                                  int color = 0; };
-  struct LineArgs       { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0;                                 int color = 0; };
-  struct BezierArgs     { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t x2 = 0; int32_t y2 = 0; int color = 0; };
-  struct WideLineArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t r = 0;                  int color = 0; };
+  struct PixelArgs      { int32_t x = 0;  int32_t y = 0;                                                                                                                 int color = 0; };
+  struct LineArgs       { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0;  int32_t y1 = 0;                                                                               int color = 0; };
+  struct BezierArgs     { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0;  int32_t y1 = 0;  int32_t x2 = 0;     int32_t y2 = 0;                                          int color = 0; };
+  struct WideLineArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0;  int32_t y1 = 0;  int32_t r = 0;                                                               int color = 0; };
   
-  struct RectArgs       { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;  int32_t h = 0;                                  int color = 0; };
-  struct RoundRectArgs  { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;  int32_t h = 0;  int32_t r = 0;                  int color = 0; };
+  struct RectArgs       { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;   int32_t h = 0;                                                                                int color = 0; };
+  struct RoundRectArgs  { int32_t x = 0;  int32_t y = 0;  int32_t w = 0;   int32_t h = 0;   int32_t r = 0;                                                               int color = 0; };
 
-  struct CircleArgs     { int32_t x = 0;  int32_t y = 0;                                  int32_t r = 0;                  int color = 0; };
-  struct EllipseArgs    { int32_t x = 0;  int32_t y = 0;                                  int32_t rx = 0; int32_t ry = 0; int color = 0; };
-  struct TriangleArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0; int32_t y1 = 0; int32_t x2 = 0; int32_t y2 = 0; int color = 0; };
+  struct CircleArgs     { int32_t x = 0;  int32_t y = 0;                                    int32_t r = 0;                                                               int color = 0; };
+  struct EllipseArgs    { int32_t x = 0;  int32_t y = 0;                                    int32_t rx = 0;     int32_t ry = 0;                                          int color = 0; };
+  struct TriangleArgs   { int32_t x0 = 0; int32_t y0 = 0; int32_t x1 = 0;  int32_t y1 = 0;  int32_t x2 = 0;     int32_t y2 = 0;                                          int color = 0; };
+  
+  struct ArcArgs        { int32_t x = 0;  int32_t y = 0;  int32_t r0 = 0;  int32_t r1 = 0;  int32_t angle0 = 0; int32_t angle1 = 0;                                      int color = 0; };
+  struct EllipseArcArgs { int32_t x = 0;  int32_t y = 0;  int32_t r0x = 0; int32_t r1x = 0; int32_t r0y = 0;    int32_t r1y = 0; int32_t angle0 = 0; int32_t angle1 = 0; int color = 0; };
   
   struct JpgFileArgs    {
     DataType dataSource = DataType::SD;
@@ -102,6 +105,9 @@ public:
     EllipseArgs    ellipse;
     TriangleArgs   triangle;
 
+    ArcArgs arc;
+    EllipseArcArgs ellipseArc;
+
     JpgFileArgs    jpg;
     PngFileArgs    png;
 
@@ -112,7 +118,7 @@ public:
 
   struct ObjectData{
     int objectNum = -1;
-    String pageName = "";
+    String objectName = "";
     DrawType type = DrawType::DrawPixel;
     ObjectArgs objectArgs;
     uint8_t zIndex = 0;
