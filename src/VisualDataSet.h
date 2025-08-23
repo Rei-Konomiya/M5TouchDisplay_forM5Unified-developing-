@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <M5GFX.h>
 #include <vector>
+#include <SD.h>
 
 class VisualDataSet{
 public:
@@ -74,7 +75,8 @@ public:
     int32_t maxHeight = 0;
     int32_t offX = 0;
     int32_t offY = 0;
-    lgfx::v1::jpeg_div::jpeg_div_t scale = lgfx::v1::jpeg_div::JPEG_DIV_NONE;
+    float scaleX = 0;
+    float scaleY = 0;
   };
 
   struct PngFileArgs    {
