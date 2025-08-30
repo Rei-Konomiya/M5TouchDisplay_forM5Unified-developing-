@@ -10,7 +10,8 @@
 #include <SPIFFS.h>
 #include <SD.h>
 #include <LittleFS.h>
-#include <vector>
+#include <JPEGDecoder.h>
+#include <pngle.h>
 
 #include "SerialDebug.h"
 #include "VisualDataSet.h"
@@ -22,16 +23,13 @@ public:
 
   LGFX_Sprite clipSprite;
 
-  VDS dataset;
+  VDS visualDataSet;
   VDS::PageData editingPage;
-  VDS::ObjectData editingObject;
 
   VDS::PageData currentPageCopy;
 
   bool isBatchUpdating = false;
-  int objectNum = 0;
   int lastAssignedPageNum = 0;
-
   int lastAssignedObjectNum = 0;
 
   VisualData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
@@ -48,18 +46,18 @@ public:
   int getObjectNumByName(const String& objectName, int pageNum = -1) const;
 
   const std::vector<VDS::PageData>& getVisualData() const;
-  const VDS::PageData& getPageData(int pageNum) const;
+  const VDS::PageData& getPageData(int pageNum = -1) const;
   const VDS::ObjectData& getObjectData(const VDS::PageData& page, int objNum) const;
   
   std::vector<VDS::PageData>& getVisualDataRef();
   VDS::PageData* getPageDataRef(int pageNum);
   VDS::ObjectData* getObjectDataRef(VDS::PageData* page, int objNum);
 
-  void beginPageUpdate();
-  void endPageUpdate();
+  void beginVisualUpdate();
+  void endVisualUpdate();
 
   bool addPage(const char* name = nullptr, int pageNum = -1);
-  bool commitEditingPage();
+  bool commitVisualEdit();
 
   bool changeEditPage(int pageNum);
   bool deletePage(int pageNum);
@@ -99,8 +97,17 @@ public:
   // 文字
   VDS::ObjectData setDrawStringObject(const String& objectName, int32_t x, int32_t y, const char* text, int color, int bgcolor, uint8_t zIndex = 0, bool onDisplay = false);
 
+  bool getJpgSize(fs::FS &fs, const char* filename, int &w, int &h);
+
+  static int g_pngWidth;
+  static int g_pngHeight;
+
+  static void pngle_on_draw(pngle_t *png, uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *rgba);
+  static void pngle_on_header(pngle_t *png, uint32_t w, uint32_t h);
+  bool getPngSize(File &file, int &width, int &height);
+
   bool drawObject(LGFX_Sprite &sprite, const VDS::ObjectData &obj);
-  bool drawPage(LGFX_Sprite &sprite, const VDS::PageData &page);
+  bool drawPage(LGFX_Sprite &sprite, const String pageName);
 
   /*
     drawObject  // オブジェクトごとに描画

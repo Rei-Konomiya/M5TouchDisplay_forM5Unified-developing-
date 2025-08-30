@@ -50,7 +50,7 @@ void setup(){
   vData.finalizeSetup();
 
   // 最初のページ表示
-  vData.drawPage(sprite1, vData.getPageData(vData.getPageNumByName("Page1"))); // setup完了後の処理まとめ
+  vData.drawPage(sprite1, "Page1"); // setup完了後の処理まとめ
   sprite1.pushSprite(&lcd, 0, 0);
 }
 
@@ -59,21 +59,21 @@ void loop(){
   if (M5.BtnA.wasPressed()){
     Serial.println("drawing page1");
     sprite1.fillSprite(WHITE);
-    vData.drawPage(sprite1, vData.getPageData(vData.getPageNumByName("Page1")));
+    vData.drawPage(sprite1, "Page1");
     sprite1.pushSprite(&lcd, 0, 0);
   }
 
   if (M5.BtnB.wasPressed()){
     Serial.println("drawing page2");
     sprite1.fillSprite(WHITE);
-    vData.drawPage(sprite1, vData.getPageData(vData.getPageNumByName("Page2")));
+    vData.drawPage(sprite1, "Page2");
     sprite1.pushSprite(&lcd, 0, 0);
   }
 
   if (M5.BtnC.wasPressed()){
     Serial.println("drawing page3");
     sprite1.fillSprite(WHITE);
-    vData.drawPage(sprite1, vData.getPageData(vData.getPageNumByName("Page3")));
+    vData.drawPage(sprite1, "Page3");
     sprite1.pushSprite(&lcd, 0, 0);
   }
 

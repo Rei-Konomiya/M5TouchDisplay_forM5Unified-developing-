@@ -71,6 +71,8 @@ public:
     const char *path = nullptr;
     int32_t x = 0;
     int32_t y = 0;
+    int32_t w = 0;
+    int32_t h = 0;
     int32_t maxWidth = 0;
     int32_t maxHeight = 0;
     int32_t offX = 0;
@@ -84,6 +86,8 @@ public:
     const char *path = nullptr;
     int32_t x = 0;
     int32_t y = 0;
+    int32_t w = 0;
+    int32_t h = 0;
     int32_t maxWidth = 0;
     int32_t maxHeight = 0;
     int32_t offX = 0;

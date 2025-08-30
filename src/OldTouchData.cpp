@@ -669,7 +669,7 @@ bool OldTouchData::update(){
   // --- パフォーマンス計測結果の出力 ---
   debugLog.printlnLog(Debug::info, "\n--- Performance Measurements ---");
   for (const auto& entry : perfMeasurements) {
-      debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
+    debugLog.printlnLog(Debug::info, "  " + entry.name + ": " + String(entry.duration_us) + " us");
   }
   debugLog.printlnLog(Debug::info, "------------------------------");
 

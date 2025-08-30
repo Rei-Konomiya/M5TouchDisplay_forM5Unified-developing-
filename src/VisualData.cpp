@@ -8,55 +8,55 @@ VisualData::VisualData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoL
 }
 
 
-// ページ番号が dataset に存在するか
+// ページ番号が visualDataSet に存在するか
 bool VisualData::isExistsPage (int pageNum) const {
-  for (const auto& page : dataset.pages) {
+  for (const auto& page : visualDataSet.pages) {
     if (!page.isEmpty() && page.pageNum == pageNum) return true;
   }
   return false;
 }
 // ページ名の重複チェック
 bool VisualData::isExistsPageName (const String& name) const {
-  for (const auto& page : dataset.pages) {
+  for (const auto& page : visualDataSet.pages) {
     if (page.pageName == name) return true;
   }
   return false;
 }
 // オブジェクト番号が編集ページ内に存在するか
 bool VisualData::isExistsObject(int objNum, int pageNum) const {
-    const VDS::PageData* page = nullptr;
+  const VDS::PageData* page = nullptr;
 
-    if (pageNum < 0) {
-        page = &editingPage; // 編集中ページ
-    } else {
-        page = &getPageData(pageNum); // 指定ページ
-        if (page->isEmpty()) return false;
-    }
+  if (pageNum < 0) {
+    page = &editingPage; // 編集中ページ
+  } else {
+    page = &getPageData(pageNum); // 指定ページ
+    if (page->isEmpty()) return false;
+  }
 
-    for (const auto& obj : page->objects) {
-        if (obj.objectNum == objNum) return true;
-    }
+  for (const auto& obj : page->objects) {
+    if (obj.objectNum == objNum) return true;
+  }
 
-    return false;
+  return false;
 }
 // ページ内に指定オブジェクト名が存在するかチェック
 bool VisualData::isExistsObjectName(const String& objectName, int pageNum) const {
-    const VDS::PageData* page = nullptr;
+  const VDS::PageData* page = nullptr;
 
-    if (pageNum < 0) {
-        // 編集中ページを対象
-        page = &editingPage;
-    } else {
-        // dataset の指定ページを取得
-        page = &getPageData(pageNum);
-        if (page->isEmpty()) return false;
-    }
+  if (pageNum < 0) {
+    // 編集中ページを対象
+    page = &editingPage;
+  } else {
+    // visualDataSet の指定ページを取得
+    page = &getPageData(pageNum);
+    if (page->isEmpty()) return false;
+  }
 
-    for (const auto& obj : page->objects) {
-        if (obj.objectName == objectName) return true;
-    }
+  for (const auto& obj : page->objects) {
+    if (obj.objectName == objectName) return true;
+  }
 
-    return false;
+  return false;
 }
 
 //bool VisualData::isExistsParent (int pageNum, int objNum) const {}
@@ -70,39 +70,40 @@ bool VisualData::isExistsEditingPage () const {
 
 // ページ名から pageNum を取得（存在しなければ -1）
 int VisualData::getPageNumByName(const String& name) const {
-    for (const auto& page : dataset.pages) {
-        if (page.pageName == name) return page.pageNum;
-    }
-    return -1;
+  for (const auto& page : visualDataSet.pages) {
+    if (page.pageName == name) return page.pageNum;
+  }
+  return -1;
 }
 
 // オブジェクト名から objectNum を取得（存在しなければ -1）
 // pageNum が -1 の場合は編集中ページを対象
 int VisualData::getObjectNumByName(const String& objectName, int pageNum) const {
-    const VDS::PageData* page = nullptr;
+  const VDS::PageData* page = nullptr;
 
-    if (pageNum < 0) {
-        page = &editingPage;
-    } else {
-        page = &getPageData(pageNum);
-        if (!page || page->isEmpty()) return -1;
-    }
+  if (pageNum < 0) {
+    page = &editingPage;
+  } else {
+    page = &getPageData(pageNum);
+    if (!page || page->isEmpty()) return -1;
+  }
 
-    for (const auto& obj : page->objects) {
-        if (obj.objectName == objectName) return obj.objectNum;
-    }
+  for (const auto& obj : page->objects) {
+    if (obj.objectName == objectName) return obj.objectNum;
+  }
 
-    return -1;
+  return -1;
 }
 
 
-// dataset.pages の const 参照を返す
+// visualDataSet.pages の const 参照を返す
 const std::vector<VDS::PageData>& VisualData::getVisualData() const {
-  return dataset.pages;
+  return visualDataSet.pages;
 }
 // pageNum が存在すれば参照を返し、なければダミーを返す
 const VDS::PageData& VisualData::getPageData(int pageNum) const {
-  for (const auto& page : dataset.pages) {
+  if(pageNum < 0) return currentPageCopy;
+  for (const auto& page : visualDataSet.pages) {
     if (!page.isEmpty() && page.pageNum == pageNum) return page;
   }
 
@@ -125,7 +126,7 @@ const VDS::ObjectData& VisualData::getObjectData(const VDS::PageData& page, int 
 }
 
 std::vector<VDS::PageData>& VisualData::getVisualDataRef() {
-  return dataset.pages;
+  return visualDataSet.pages;
 }
 VDS::PageData* VisualData::getPageDataRef(int pageNum) {
   if (!isExistsPage(pageNum)) return nullptr;  // 先に存在チェック
@@ -144,10 +145,11 @@ VDS::ObjectData* VisualData::getObjectDataRef(VDS::PageData* page, int objNum) {
 }
 
 // 一括変更モードの開始・終了
-void VisualData::beginPageUpdate () {
+void VisualData::beginVisualUpdate () {
   isBatchUpdating = true;
 }
-void VisualData::endPageUpdate () {
+void VisualData::endVisualUpdate () {
+  commitVisualEdit();
   isBatchUpdating = false;
 }
 
@@ -176,20 +178,20 @@ bool VisualData::addPage (const char* name, int pageNum) {
   newPage.pageNum = pageNum;
   newPage.pageName = pageNameStr;
 
-  dataset.pages.push_back(newPage);
+  visualDataSet.pages.push_back(newPage);
 
   return changeEditPage(pageNum);
 }
 
-// 現在の編集ページを dataset に送る
-bool VisualData::commitEditingPage() {
+// 現在の編集ページを visualDataSet に送る
+bool VisualData::commitVisualEdit() {
   if (editingPage.isEmpty()) return false;
 
   auto* existingPage = getPageDataRef (editingPage.pageNum);
   if (existingPage) {
     *existingPage = editingPage;  // データ更新
   } else {
-    dataset.pages.push_back(editingPage);
+    visualDataSet.pages.push_back(editingPage);
   }
 
   editingPage = VDS::PageData(); // 編集ページリセット
@@ -198,8 +200,8 @@ bool VisualData::commitEditingPage() {
 
 // 編集ページを切り替える
 bool VisualData::changeEditPage (int pageNum) {
-  // 編集中のデータを dataset に同期
-  commitEditingPage();
+  // 編集中のデータを visualDataSet に同期
+  commitVisualEdit();
 
   // 指定ページが存在するかチェック
   if(isExistsPage(pageNum)){
@@ -213,9 +215,9 @@ bool VisualData::changeEditPage (int pageNum) {
 
 // ページ削除
 bool VisualData::deletePage (int pageNum) {
-  for (auto it = dataset.pages.begin(); it != dataset.pages.end(); ++it) {
+  for (auto it = visualDataSet.pages.begin(); it != visualDataSet.pages.end(); ++it) {
     if (it->pageNum == pageNum) {
-      dataset.pages.erase(it);
+      visualDataSet.pages.erase(it);
 
       // 削除したページが編集中だった場合は編集中をリセット
       if (editingPage.pageNum == pageNum) {
@@ -330,6 +332,8 @@ bool VisualData::moveObject(const String& objectName, size_t newIndex, bool onDi
 
   return true;
 }
+
+
 
 
 
@@ -540,6 +544,17 @@ VDS::ObjectData VisualData::setDrawJpgFileObject (const String& objectName, VDS:
   args.jpg.maxWidth = maxWidth; args.jpg.maxHeight = maxHeight;
   args.jpg.offX = offX; args.jpg.offY = offY;
   args.jpg.scaleX = scaleX; args.jpg.scaleY = scaleY;
+
+  // サイズ取得
+  int originalWidth, originalHeight;
+  if (getJpgSize(SD, path, originalWidth, originalHeight)) {
+    int w  = min(int(originalWidth * scaleX), maxWidth);
+    int h = min(int(originalHeight * scaleY), maxHeight);
+    args.jpg.w = w; args.jpg.h = h;
+  } else {
+    args.jpg.w = 0; args.jpg.h = 0;
+  }
+
   return createOrUpdateObject(VDS::DrawType::DrawJpgFile, objectName, args, zIndex, onDisplay);
 }
 
@@ -554,6 +569,18 @@ VDS::ObjectData VisualData::setDrawPngFileObject (const String& objectName, VDS:
   args.png.maxWidth = maxWidth; args.png.maxHeight = maxHeight;
   args.png.offX = offX; args.png.offY = offY;
   args.png.scaleX = scaleX; args.png.scaleY = scaleY;
+
+  int originalWidth, originalHeight;
+  File pngFile = SD.open(args.png.path);
+  if (pngFile) {
+    if (getPngSize(pngFile, originalWidth, originalHeight)) {
+      int w  = min(int(originalWidth  * scaleX), maxWidth);
+      int h = min(int(originalHeight * scaleY), maxHeight);
+      args.png.w  = w; args.png.h = h;
+    }
+    pngFile.close();
+  }
+
   return createOrUpdateObject(VDS::DrawType::DrawPngFile, objectName, args, zIndex, onDisplay);
 }
 
@@ -565,6 +592,67 @@ VDS::ObjectData VisualData::setDrawStringObject (const String& objectName, int32
   args.text.color = color; args.text.bgcolor = bgcolor;
   return createOrUpdateObject(VDS::DrawType::DrawString, objectName, args, zIndex, onDisplay);
 }
+
+bool VisualData::getJpgSize (fs::FS &fs, const char* filename, int &w, int &h) {
+  File jpgFile = fs.open(filename);
+  if (!jpgFile) return 0;
+  if (!JpegDec.decodeSdFile(jpgFile)) {
+    jpgFile.close();
+    return false;
+  }
+  w = JpegDec.width;
+  h = JpegDec.height;
+
+  jpgFile.close();
+  return true;
+}
+
+// 描画しないダミーコールバック
+void VisualData::pngle_on_draw(pngle_t *png, uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *rgba) {
+    // 何もしない
+}
+
+// PNG ヘッダ読み取り用コールバック
+void VisualData::pngle_on_header(pngle_t *png, uint32_t w, uint32_t h) {
+  g_pngWidth  = w;
+  g_pngHeight = h;
+}
+
+bool VisualData::getPngSize(File &file, int &width, int &height) {
+  g_pngWidth = 0;
+  g_pngHeight = 0;
+
+  pngle_t *pngle = pngle_new();
+  if (!pngle) return false;
+
+  pngle_set_draw_callback(pngle, pngle_on_draw);
+  pngle_set_init_callback(pngle, pngle_on_header);
+
+  uint8_t buf[1024];
+  int remain = 0;
+
+  while (file.available()) {
+    int len = file.read(buf + remain, sizeof(buf) - remain);
+    if (len <= 0) break;
+    int fed = pngle_feed(pngle, buf, remain + len);
+    if (fed < 0) {
+      Serial.printf("pngle error: %s\n", pngle_error(pngle));
+      pngle_destroy(pngle);
+      return false;
+    }
+    remain = remain + len - fed;
+    if (g_pngWidth > 0 && g_pngHeight > 0) break;
+  }
+
+  pngle_destroy(pngle);
+
+  width  = g_pngWidth;
+  height = g_pngHeight;
+
+  return (width > 0 && height > 0);
+}
+
+
 
 bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
   switch (obj.type) {
@@ -757,7 +845,9 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
 }
 
 
-bool VisualData::drawPage(LGFX_Sprite &sprite, const VDS::PageData &page) {
+bool VisualData::drawPage(LGFX_Sprite &sprite, const String pageName) {
+  VDS::PageData page;
+  getPageData(getPageNumByName(pageName));
   if (page.isEmpty()) return false;
 
   currentPageCopy = page;
@@ -783,6 +873,5 @@ bool VisualData::drawPage(LGFX_Sprite &sprite, const VDS::PageData &page) {
 
 
 void VisualData::finalizeSetup () {
-  commitEditingPage();
-  endPageUpdate();
+  endVisualUpdate();
 }
