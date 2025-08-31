@@ -7,6 +7,7 @@ class TouchData {
 public:
   Debug debugLog;
   using TDS = TouchDataSet;
+  using VDS = VisualDataSet;
 
   VisualData* vData;               // VisualData への参照
   LGFX_Sprite judgeSprite;         // 判定用スプライト
@@ -18,15 +19,13 @@ public:
   String currentProcessName = "";
 
   bool isBatchUpdating = false;
-  int lastAssignedPageNum = 0;
   int lastAssignedProcessNum = 0;
-  uint32_t lastAssignedColor = 0;
 
   // =========================
   // 1. 初期化
   // =========================
-  TouchData(LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
-
+  TouchData(VisualData* vData, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog);
+  bool initJudgeSprite(LovyanGFX* parent);
   // =========================
   // 2. 存在確認系
   // =========================
@@ -49,16 +48,17 @@ public:
   TDS::TouchType getProcessType(int processNum, int pageNum = -1) const;
   uint32_t getProcessColor(int processNum, int pageNum = -1) const;
 
-  uint32_t generateNewColor();
-  uint32_t createOrGetObjectColor(int pageNum, int objectNum, bool getOnly = false);
+  int generateNewColor(TDS::ocPageData ocPageData);
+  int createOrGetObjectColor(int pageNum, int objectNum, bool getOnly = false);
   // =========================
   // 4. データ登録系
   // =========================
-  bool createProcess(bool onDisplay = false,
-                      const String& processName, String objectName, TDS::TouchType type,
+  bool changeEditPage(int pageNum);
+
+  bool createProcess( const String& processName, String objectName, TDS::TouchType type,
                       bool enableOverBorder = false, bool returnCurrentOver = false,
-                      int multiClickCount = 0, uint32_t colorCode = 0
-                      );
+                      int multiClickCount = 0, uint32_t colorCode = 0,
+                      bool onDisplay = false );
 
   bool setReleaseProcess(String processName, String objectName, bool onDisplay = false);
   bool setReleasingProcess(String processName, String objectName, bool onDisplay = false);
@@ -82,8 +82,8 @@ public:
   bool setMultiClickedProcess(String processName, String objectName, int count, bool onDisplay = false);
 
   bool commitProcessEdit();
-  void TouchData::beginProcessEdit();
-  void TouchData::endProcessEdit();
+  void beginProcessEdit();
+  void endProcessEdit();
 
   // =========================
   // 5. プロセス有効/無効
@@ -94,14 +94,17 @@ public:
 
   // =========================
   // 6. タッチ判定
-  // =========================w
+  // =========================
   void setProcessPage();
   bool drawObjectProcess (const VDS::ObjectData &obj);
   bool drawPageProcess();
-  bool judgeProcess(int32_t x, int32_t y);
+  bool judgeProcess(int x, int y);
 
   // =========================
   // 7. 更新（タッチ状態・判定）
   // =========================
   bool update();
+
+  
+  void finalizeSetup();
 };

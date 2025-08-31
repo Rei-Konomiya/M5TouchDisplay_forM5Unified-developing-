@@ -1,21 +1,21 @@
 #include "TouchData.hpp"
-using TDS = TouchDataSet;
 using VDS = VisualDataSet;
+using TDS = TouchDataSet;
 
 
 // =========================
 // 1. 初期化
 // =========================
-TouchData::TouchData (LovyanGFX* parent, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
+TouchData::TouchData (VisualData* vData, bool enableErrorLog, bool enableInfoLog, bool enableSuccessLog){
+  this->vData = vData;
+
   debugLog.setDebug(enableErrorLog, enableInfoLog, enableSuccessLog);
+}
 
+bool TouchData::initJudgeSprite(LovyanGFX* parent){
+  judgeSprite.setColorDepth(16);
   judgeSprite.setPsram(true);
-  judgeSprite.setColorDepth(8);
-  bool created = judgeSprite.createSprite(320, 240);
-
-  if (!created) {
-    debugLog.printlnLog(Debug::error, "[ERROR] judgeSprite createSprite failed"); // DebugLogを使用
-  }
+  return judgeSprite.createSprite(parent->width(), parent->height());
 }
 
 // =========================
@@ -167,14 +167,18 @@ uint32_t TouchData::getProcessColor(int processNum, int pageNum) const {
 
 
 // 新しい colorCode を生成（0は黒として避ける）
-uint32_t TouchData::generateNewColor() {
-  uint32_t color = lastAssignedColor++;
-  if (lastAssignedColor == 0) lastAssignedColor = 1;
+int TouchData::generateNewColor(TDS::ocPageData ocPageData) {
+  int color = 0;
+  if(ocPageData.objectColors.size() == 0){
+    color = 1;
+  }else{
+    color = ocPageData.objectColors.back().colorCode+1;
+  }
   return color;
 }
 
 // createOrGetObjectColor関数
-uint32_t TouchData::createOrGetObjectColor(int pageNum, int objectNum, bool getOnly) {
+int TouchData::createOrGetObjectColor(int pageNum, int objectNum, bool getOnly) {
   for (auto& ocPage : touchDataSet.ocPages) {
     if (ocPage.pageNum == pageNum) {
       for (auto& oc : ocPage.objectColors) {
@@ -183,23 +187,25 @@ uint32_t TouchData::createOrGetObjectColor(int pageNum, int objectNum, bool getO
         }
       }
       // オブジェクトが存在しない場合
+      debugLog.printlnLog(debugLog.error, "objectData no exists.");
       if (getOnly) return 0x000000; // BLACK
       TDS::objectColor oc;
       oc.objectNum = objectNum;
-      oc.colorCode = generateNewColor();
+      oc.colorCode = generateNewColor(ocPage);
       ocPage.objectColors.push_back(oc);
       return oc.colorCode;
     }
   }
 
   // ページが存在しない場合
+  debugLog.printlnLog(debugLog.error, "pageData no exists.");
   if (getOnly) return 0x000000; // BLACK
   touchDataSet.ocPages.push_back({});
   auto& newPage = touchDataSet.ocPages.back();
   newPage.pageNum = pageNum;
   TDS::objectColor oc;
   oc.objectNum = objectNum;
-  oc.colorCode = generateNewColor();
+  oc.colorCode = generateNewColor(newPage);
   newPage.objectColors.push_back(oc);
   return oc.colorCode;
 }
@@ -208,10 +214,30 @@ uint32_t TouchData::createOrGetObjectColor(int pageNum, int objectNum, bool getO
 // =========================
 // 4. セッター系 (createProcess 経由)
 // =========================
-bool TouchData::createProcess (bool onDisplay,
-                              const String& processName, String objectName, TDS::TouchType type,
+bool TouchData::changeEditPage(int pageNum) {
+  // まず現在の編集内容を確定
+  commitProcessEdit();
+
+  // 既存ページがあれば編集ページに取り込む
+  TDS::PageData* p = getPageData(pageNum);
+  if (p) {
+    editingPage = *p;
+    return true;
+  }
+
+  // なければ新規の編集ページを作り pageNum を設定しておく
+  if(vData->isExistsPage(pageNum)){
+    editingPage = TDS::PageData();
+    editingPage.pageNum = pageNum;
+    return true;
+  }
+  return false;
+}
+
+bool TouchData::createProcess ( const String& processName, String objectName, TDS::TouchType type,
                               bool enableOverBorder, bool returnCurrentOver,
-                              int multiClickCount, uint32_t colorCode ) {
+                              int multiClickCount, uint32_t colorCode,
+                              bool onDisplay) {
   TDS::PageData* targetPage = onDisplay ? &currentPageProcess : &editingPage;
   if (!targetPage) return false;
 
@@ -219,8 +245,14 @@ bool TouchData::createProcess (bool onDisplay,
   if (objectNum < 0) return false;
 
   int pageNum = onDisplay ? currentPageProcess.pageNum : editingPage.pageNum;
-  if (isExistsProcessType(objectNum, type, pageNum)) return false;
-  if (isExistsProcessName(processName, onDisplay ? -1 : editingPage.pageNum)) return false;
+  if (isExistsProcessType(objectNum, type, pageNum)) {
+    debugLog.printlnLog(debugLog.error, "this processData exists.");
+    return false;
+  }
+  if (isExistsProcessName(processName, onDisplay ? -1 : editingPage.pageNum)) {
+    debugLog.printlnLog(debugLog.error, "this processName exists.");
+    return false;
+  }
 
   lastAssignedProcessNum++;
   int processNum = lastAssignedProcessNum;
@@ -233,7 +265,7 @@ bool TouchData::createProcess (bool onDisplay,
   proc.enableOverBorder = enableOverBorder;
   proc.returnCurrentOver = returnCurrentOver;
   proc.multiClickCount = multiClickCount;
-  proc.colorCode = createOrGetObjectColor (pageNum, objectNum) ;
+  proc.colorCode = createOrGetObjectColor(pageNum, objectNum);
 
   targetPage->processes.push_back(proc);
 
@@ -246,81 +278,81 @@ bool TouchData::createProcess (bool onDisplay,
 
 // Release 系
 bool TouchData::setReleaseProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Release);
+  return createProcess(processName, objectName, TDS::TouchType::Release);
 }
 
 bool TouchData::setReleasingProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Releasing);
+  return createProcess(processName, objectName, TDS::TouchType::Releasing);
 }
 
 // Press 系
 bool TouchData::setPressProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Press);
+  return createProcess(processName, objectName, TDS::TouchType::Press);
 }
 
 bool TouchData::setPressingProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Pressing);
+  return createProcess(processName, objectName, TDS::TouchType::Pressing);
 }
 
 bool TouchData::setPressedProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Pressed);
+  return createProcess(processName, objectName, TDS::TouchType::Pressed);
 }
 
 // Hold 系
 bool TouchData::setHoldProcess(String processName, String objectName, bool onDisplay) {
-    return createProcess(onDisplay, processName, objectName, TDS::TouchType::Hold);
+    return createProcess(processName, objectName, TDS::TouchType::Hold);
 }
 
 bool TouchData::setHoldingProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Holding);
+  return createProcess(processName, objectName, TDS::TouchType::Holding);
 }
 
 bool TouchData::setHeldProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Held);
+  return createProcess(processName, objectName, TDS::TouchType::Held);
 }
 
 // Flick 系
 bool TouchData::setFlickProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Flick);
+  return createProcess(processName, objectName, TDS::TouchType::Flick);
 }
 
 bool TouchData::setFlickingProcess(String processName, String objectName,
                                   bool enableOverBorder, bool returnCurrentOver, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Flicking,
+  return createProcess(processName, objectName, TDS::TouchType::Flicking,
                         enableOverBorder, returnCurrentOver);
 }
 
 bool TouchData::setFlickedProcess(String processName, String objectName,
                                   bool enableOverBorder, bool returnCurrentOver, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Flicked,
+  return createProcess(processName, objectName, TDS::TouchType::Flicked,
                         enableOverBorder, returnCurrentOver);
 }
 
 // Drag 系
 bool TouchData::setDragProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Drag);
+  return createProcess(processName, objectName, TDS::TouchType::Drag);
 }
 
 bool TouchData::setDraggingProcess(String processName, String objectName,
                                     bool enableOverBorder, bool returnCurrentOver, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Dragging,
+  return createProcess(processName, objectName, TDS::TouchType::Dragging,
                         enableOverBorder, returnCurrentOver);
 }
 
 bool TouchData::setDraggedProcess(String processName, String objectName,
                                   bool enableOverBorder, bool returnCurrentOver, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Dragged,
+  return createProcess(processName, objectName, TDS::TouchType::Dragged,
                         enableOverBorder, returnCurrentOver);
 }
 
 // Click 系
 bool TouchData::setClickedProcess(String processName, String objectName, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::Clicked);
+  return createProcess(processName, objectName, TDS::TouchType::Clicked);
 }
 
 bool TouchData::setMultiClickedProcess(String processName, String objectName,
                                         int count, bool onDisplay) {
-  return createProcess(onDisplay, processName, objectName, TDS::TouchType::MultiClicked,
+  return createProcess(processName, objectName, TDS::TouchType::MultiClicked,
                         false, false, count);
 }
 
@@ -335,9 +367,6 @@ bool TouchData::commitProcessEdit() {
     // 存在しなければ追加
     touchDataSet.pages.push_back(editingPage);
   }
-
-  // 編集ページリセット
-  editingPage = TDS::PageData();
 
   return true;
 }
@@ -406,81 +435,49 @@ void TouchData::clearEnabledProcessList() {
   enabledProcess.clear();
 }
 
-bool TouchData::judgeProcess(int32_t x, int32_t y) {
-  if (currentPageProcess.isEmpty()) return false;
-  if (!judgeSprite.getBuffer()) return false;  // スプライト未初期化なら無効
-
-  uint32_t touchedColor = judgeSprite.readPixel(x, y);
-  if (touchedColor == 0) return false;  // 透明なら無効
-
-  int hitProcessNum = -1;
-  int maxZIndex = -1;
-
-  // ページ内のプロセスを走査
-  for (const auto& proc : currentPageProcess.processes) {
-    if (proc.colorCode == touchedColor) {
-      // zIndexがあるならここで比較（必要に応じて拡張）
-      hitProcessNum = proc.processNum;
-      break;
-    }
-  }
-
-  // ヒットしたプロセスのみ enabledProcess に残す
-  enabledProcess.clear();
-  if (hitProcessNum != -1) {
-    enabledProcess.push_back(hitProcessNum);
-    return true;
-  }
-  return false;
-}
-
 void TouchData::setProcessPage() {
-  if (touchDataSet.pages.empty()) {
-    debugLog.printlnLog(debugLog.error, "No page data exists.");
+  String drawingPageName = vData->getDrawingPage();
+  int pageNum = vData->getPageNumByName(drawingPageName);
+  // ページ番号を引数から取得
+  if (!isExistsPage(pageNum)) {
+    debugLog.printlnLog(debugLog.error, "Page not found." + String(pageNum));
     return;
   }
 
-  // ページ番号の妥当性チェック
-  if (!isExistsPage(lastAssignedPageNum)) {
-    debugLog.printlnLog(debugLog.error, "Page not found: " + String(lastAssignedPageNum));
-    return;
-  }
+  // ページデータ取得（存在する場合もここで取得）
+  currentPageProcess = *getPageData(pageNum);
 
-  // 対象ページをセット
-  currentPageProcess = *getPageData(lastAssignedPageNum);
-
-  // 有効プロセスリストを初期化
+  // 有効プロセスリストをクリア
   clearEnabledProcessList();
 
-  // デバッグログ
   debugLog.printlnLog(debugLog.success,
     "Process page set. PageNum=" + String(currentPageProcess.pageNum) +
     " / Process count=" + String(currentPageProcess.processes.size()));
 }
 
 
+
 bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
   // ここで色情報を取得
   int pageNum = currentPageProcess.pageNum;   // 現在のページ番号
   int objectNum = obj.objectNum;              // objからオブジェクト番号を取得
-  uint32_t objColor = createOrGetObjectColor(pageNum, objectNum, true); // getOnly = true
+  int objColor = createOrGetObjectColor(pageNum, objectNum, true); // getOnly = true
+
 
   switch (obj.type) {
 
     // -------------------- 基本描画 --------------------
     case VDS::DrawType::DrawPixel:
-      judgeSprite.drawPixel(obj.objectArgs.pixel.x, obj.objectArgs.pixel.y, obj.objectArgs.pixel.color);
+      judgeSprite.drawPixel(obj.objectArgs.pixel.x, obj.objectArgs.pixel.y, objColor);
       break;
 
     case VDS::DrawType::DrawLine:
-      Serial.println(F("drawing DrawLine"));
       judgeSprite.drawLine(obj.objectArgs.line.x0, obj.objectArgs.line.y0,
                       obj.objectArgs.line.x1, obj.objectArgs.line.y1,
                       objColor);
       break;
 
     case VDS::DrawType::DrawBezier:
-      Serial.println(F("drawing DrawBezier"));
       judgeSprite.drawBezier(obj.objectArgs.bezier.x0, obj.objectArgs.bezier.y0,
                         obj.objectArgs.bezier.x1, obj.objectArgs.bezier.y1,
                         obj.objectArgs.bezier.x2, obj.objectArgs.bezier.y2,
@@ -488,41 +485,35 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::DrawWideLine:
-      Serial.println(F("drawing DrawWideLine"));
       judgeSprite.drawWideLine(obj.objectArgs.wideLine.x0, obj.objectArgs.wideLine.y0,
                           obj.objectArgs.wideLine.x1, obj.objectArgs.wideLine.y1,
                           obj.objectArgs.wideLine.r, objColor);
       break;
 
     case VDS::DrawType::DrawRect:
-      Serial.println(F("drawing DrawRect"));
       judgeSprite.drawRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
                       obj.objectArgs.rect.w, obj.objectArgs.rect.h,
                       objColor);
       break;
 
     case VDS::DrawType::DrawRoundRect:
-      Serial.println(F("drawing DrawRoundRect"));
       judgeSprite.drawRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
                             obj.objectArgs.roundRect.w, obj.objectArgs.roundRect.h,
                             obj.objectArgs.roundRect.r, objColor);
       break;
 
     case VDS::DrawType::DrawCircle:
-      Serial.println(F("drawing DrawCircle"));
       judgeSprite.drawCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
                         obj.objectArgs.circle.r, objColor);
       break;
 
     case VDS::DrawType::DrawEllipse:
-      Serial.println(F("drawing DrawEllipse"));
       judgeSprite.drawEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
                           obj.objectArgs.ellipse.rx, obj.objectArgs.ellipse.ry,
                           objColor);
       break;
 
     case VDS::DrawType::DrawTriangle:
-      Serial.println(F("drawing DrawTriangle"));
       judgeSprite.drawTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
                           obj.objectArgs.triangle.x1, obj.objectArgs.triangle.y1,
                           obj.objectArgs.triangle.x2, obj.objectArgs.triangle.y2,
@@ -531,27 +522,23 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
 
     // -------------------- 塗りつぶし --------------------
     case VDS::DrawType::FillRect:
-      Serial.println(F("drawing FillRect"));
       judgeSprite.fillRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
                       obj.objectArgs.rect.w, obj.objectArgs.rect.h,
                       objColor);
       break;
 
     case VDS::DrawType::FillRoundRect:
-      Serial.println(F("drawing FillRoundRect"));
       judgeSprite.fillRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
                             obj.objectArgs.roundRect.w, obj.objectArgs.roundRect.h,
                             obj.objectArgs.roundRect.r, objColor);
       break;
 
     case VDS::DrawType::FillCircle:
-      Serial.println(F("drawing FillCircle"));
       judgeSprite.fillCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
                         obj.objectArgs.circle.r, objColor);
       break;
 
     case VDS::DrawType::FillTriangle:
-      Serial.println(F("drawing FillTriangle"));
       judgeSprite.fillTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
                           obj.objectArgs.triangle.x1, obj.objectArgs.triangle.y1,
                           obj.objectArgs.triangle.x2, obj.objectArgs.triangle.y2,
@@ -559,14 +546,12 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::FillEllipse:
-      Serial.println(F("drawing FillEllipse"));
       judgeSprite.fillEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
                           obj.objectArgs.ellipse.rx, obj.objectArgs.ellipse.ry,
                           objColor);
       break;
 
     case VDS::DrawType::FillArc:
-      Serial.println(F("drawing FillArc"));
       judgeSprite.fillArc(obj.objectArgs.arc.x, obj.objectArgs.arc.y,
                       obj.objectArgs.arc.r0, obj.objectArgs.arc.r1,
                       obj.objectArgs.arc.angle0, obj.objectArgs.arc.angle1,
@@ -574,7 +559,6 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::FillEllipseArc:
-      Serial.println(F("drawing FillEllipseArc"));
       judgeSprite.fillEllipseArc(obj.objectArgs.ellipseArc.x, obj.objectArgs.ellipseArc.y,
                             obj.objectArgs.ellipseArc.r0x, obj.objectArgs.ellipseArc.r1x,
                             obj.objectArgs.ellipseArc.r0y, obj.objectArgs.ellipseArc.r1y,
@@ -584,14 +568,12 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
 
     // -------------------- 画像描画 --------------------
     case VDS::DrawType::DrawJpgFile:
-      Serial.println(F("drawing DrawJpgFile"));
       judgeSprite.fillRect(obj.objectArgs.jpg.x, obj.objectArgs.jpg.y,
                       obj.objectArgs.jpg.w, obj.objectArgs.jpg.h,
                       objColor);
       break;
 
     case VDS::DrawType::DrawPngFile:
-      Serial.println(F("drawing DrawPngFile"));
       judgeSprite.fillRect(obj.objectArgs.png.x, obj.objectArgs.png.y,
                       obj.objectArgs.png.w, obj.objectArgs.png.h,
                       objColor);
@@ -599,7 +581,6 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
 
     // -------------------- 文字描画 --------------------
     case VDS::DrawType::DrawString:
-      Serial.println(F("drawing DrawString"));
       judgeSprite.setTextColor(objColor, objColor); 
       judgeSprite.drawString(obj.objectArgs.text.text,
                         obj.objectArgs.text.x, obj.objectArgs.text.y);
@@ -613,17 +594,14 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
     case VDS::DrawType::ClipCircle:
     case VDS::DrawType::ClipEllipse:
     case VDS::DrawType::ClipTriangle:
-      Serial.println(F("Clip type not implemented"));
       break;
 
     // -------------------- コンテナ系 --------------------
     case VDS::DrawType::FlexBox:
     case VDS::DrawType::TableBox:
-      Serial.println(F("Container type not implemented"));
       break;
 
     default:
-      Serial.println(F("Unknown DrawType"));
       return false;
   }
 
@@ -639,7 +617,6 @@ bool TouchData::drawPageProcess() {
                       return a.zIndex < b.zIndex;
                     });
 
-  Serial.println("clear Display");
   judgeSprite.fillSprite(BLACK);
 
   // 描画
@@ -650,8 +627,9 @@ bool TouchData::drawPageProcess() {
   return true;
 }
 
-bool TouchData::judgeProcess(int x, int y) {
+bool TouchData::judgeProcess (int x, int y) {
   // 1:現在のページのプロセス情報が存在するかチェック
+
   if (currentPageProcess.isEmpty()) {
     debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: currentPageProcess is empty. Cannot judge process.");
     currentPageProcess = TDS::PageData();
@@ -690,7 +668,7 @@ bool TouchData::judgeProcess(int x, int y) {
 }
 
 
-bool TouchData::update() {
+bool TouchData::update () {
   // --- タッチセンサーの有効確認 ---
   if (!M5.Touch.isEnabled()) {
     debugLog.printlnLog(Debug::error, "Touch sensor is disabled. Returning false.");
@@ -698,7 +676,6 @@ bool TouchData::update() {
   }
 
   // --- 描画ページの取得と設定 ---
-  String drawingPageName = vData->getDrawingPage();
   setProcessPage();
 
   if (currentPageProcess.isEmpty()) {
@@ -713,18 +690,9 @@ bool TouchData::update() {
   if (t.wasPressed()) {
     enableProcess(true);  // Press関連プロセスを有効化
     debugLog.printlnLog(Debug::info, "TouchData::update - wasPressed -> enabling Press processes.");
-  } 
-  else if (t.wasReleased()) {
+  } else if (t.wasReleased()) {
     enableProcess(false); // Release関連プロセスを有効化
     debugLog.printlnLog(Debug::info, "TouchData::update - wasReleased -> enabling Release processes.");
-  } 
-  else {
-    // 新規イベントなし（ホールド継続 or タッチなし）
-    debugLog.printlnLog(Debug::info,
-      "TouchData::update - No new touch event. Holding=" + String(t.isHolding()) +
-      ", Pressed=" + String(t.isPressed()));
-    currentProcessName = ""; 
-    return false;
   }
 
   // --- 特殊イベントによるプロセス無効化 ---
@@ -764,4 +732,11 @@ bool TouchData::update() {
     "TouchData::update - Finished cycle. Judged=" + String(judged));
 
   return judged; // 判定結果を返す
+}
+
+
+
+void TouchData::finalizeSetup(){
+  commitProcessEdit();
+  isBatchUpdating = false;
 }

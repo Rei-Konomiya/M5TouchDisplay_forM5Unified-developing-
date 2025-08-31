@@ -846,11 +846,14 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
 
 
 bool VisualData::drawPage(LGFX_Sprite &sprite, const String pageName) {
+
   VDS::PageData page;
-  getPageData(getPageNumByName(pageName));
+  page = getPageData(getPageNumByName(pageName));
   if (page.isEmpty()) return false;
 
   currentPageCopy = page;
+  Serial.printf("Drawing page: %s\n", pageName.c_str());
+  Serial.printf("Number of objects: %d\n", currentPageCopy.objects.size());
 
   // Z-indexで安定ソート
   std::vector<VDS::ObjectData> sortedObjects = currentPageCopy.objects;

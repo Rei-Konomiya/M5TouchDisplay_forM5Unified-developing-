@@ -52,7 +52,7 @@ public:
   // オブジェクトごとのカラーリスト
   struct objectColor {
     int objectNum = -1;
-    uint32_t colorCode = 0;
+    int colorCode = 0;
 
     bool isEmpty() const {
       return objectNum == -1;  // 無効ページの判定
