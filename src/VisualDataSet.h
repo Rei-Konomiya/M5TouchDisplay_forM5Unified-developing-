@@ -96,7 +96,17 @@ public:
     float scaleY = 0;
   };
 
-  struct StringArgs { int32_t x = 0; int32_t y = 0; const char* text = nullptr; int color = 0; int bgcolor = 0; };
+  struct StringArgs { 
+    int32_t x = 0;
+    int32_t y = 0;
+    const char* text = nullptr;
+    int color = 0;
+    int bgcolor = 0;
+    const lgfx::IFont* font = nullptr;         // <- 修正
+    textdatum_t datum = textdatum_t::top_left; // <- 修正
+    int textSize = 1;
+    bool textWrap = true;
+  };
 
   union ObjectArgs{
     PixelArgs      pixel;
@@ -128,6 +138,7 @@ public:
     DrawType type = DrawType::DrawPixel;
     ObjectArgs objectArgs;
     uint8_t zIndex = 0;
+    bool isUntouchable = false;
 
     bool isEmpty() const {
       return objectNum == -1; // ダミーデータは pageNum = -1 として判定

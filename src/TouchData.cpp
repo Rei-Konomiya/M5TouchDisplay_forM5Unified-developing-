@@ -168,12 +168,12 @@ uint32_t TouchData::getProcessColor(int processNum, int pageNum) const {
 
 // 新しい colorCode を生成（0は黒として避ける）
 int TouchData::generateNewColor(TDS::ocPageData ocPageData) {
-  int color = 0;
-  if(ocPageData.objectColors.size() == 0){
-    color = 1;
-  }else{
-    color = ocPageData.objectColors.back().colorCode+1;
-  }
+  int color = 1;  // 0は黒として避ける
+  // 使用中の colorCode をセットに格納
+  std::set<int> usedColors;
+  for (const auto &oc : ocPageData.objectColors) usedColors.insert(oc.colorCode);
+  // 1 から順に空き番号を探索
+  while (usedColors.count(color)) color++;
   return color;
 }
 
@@ -187,26 +187,29 @@ int TouchData::createOrGetObjectColor(int pageNum, int objectNum, bool getOnly) 
         }
       }
       // オブジェクトが存在しない場合
-      debugLog.printlnLog(debugLog.error, "objectData no exists.");
+      debugLog.printlnLog(debugLog.info, "oc : objectData no exists. !" + vData->getObjectData(vData->getPageData(pageNum), objectNum).objectName);
       if (getOnly) return 0x000000; // BLACK
       TDS::objectColor oc;
       oc.objectNum = objectNum;
       oc.colorCode = generateNewColor(ocPage);
       ocPage.objectColors.push_back(oc);
+      Serial.println("created objectColor.");
       return oc.colorCode;
     }
   }
 
   // ページが存在しない場合
-  debugLog.printlnLog(debugLog.error, "pageData no exists.");
+  debugLog.printlnLog(debugLog.info, "oc : pageData no exists. !" + vData->getPageData(pageNum).pageName);
   if (getOnly) return 0x000000; // BLACK
   touchDataSet.ocPages.push_back({});
   auto& newPage = touchDataSet.ocPages.back();
+  Serial.println("created ocPageData.");
   newPage.pageNum = pageNum;
   TDS::objectColor oc;
   oc.objectNum = objectNum;
   oc.colorCode = generateNewColor(newPage);
   newPage.objectColors.push_back(oc);
+  Serial.println("created objectColor.");
   return oc.colorCode;
 }
 
@@ -234,6 +237,76 @@ bool TouchData::changeEditPage(int pageNum) {
   return false;
 }
 
+bool TouchData::deleteProcess(const String& processName, int pageNum, bool onDisplay) {
+  TDS::PageData* targetPage = onDisplay ? &currentPageProcess : &editingPage;
+  if (!targetPage) return false;
+
+  bool deleted = false;
+  for (auto it = targetPage->processes.begin(); it != targetPage->processes.end(); ) {
+    if (it->processName == processName) {
+      it = targetPage->processes.erase(it); // erase は eraseした次のイテレータを返す
+      deleted = true;
+    } else {
+      ++it;
+    }
+  }
+  return deleted;
+
+  for (auto &ocPage : touchDataSet.ocPages) {
+    if (ocPage.pageNum == targetPage->pageNum) {
+      ocPage.objectColors.erase(
+        std::remove_if(ocPage.objectColors.begin(), ocPage.objectColors.end(),
+            [this, targetPage](const TDS::objectColor &oc){
+              return !vData->isExistsObject(oc.objectNum, targetPage->pageNum);
+        }),
+        ocPage.objectColors.end()
+      );
+    }
+  }
+
+  if (!isBatchUpdating && !onDisplay) {
+    commitProcessEdit();
+  }
+}
+
+void TouchData::defragProcesses(int pageNum, bool onDisplay)
+{
+  TDS::PageData* targetPage = nullptr;
+
+  if (pageNum >= 0) {
+    targetPage = getPageData(pageNum);  // ページ指定がある場合
+  } else {
+    targetPage = onDisplay ? &currentPageProcess : &editingPage;
+  }
+
+  if (!targetPage) return;
+
+  // erase-remove idiom で存在しないオブジェクトのプロセスを削除
+  targetPage->processes.erase(
+      std::remove_if(targetPage->processes.begin(), targetPage->processes.end(),
+                      [this, targetPage](const TDS::ProcessData& p) {
+                          return !vData->isExistsObject(p.objectNum, targetPage->pageNum);
+                      }),
+      targetPage->processes.end());
+
+    // 存在しないオブジェクトの objectColor も削除
+  for (auto &ocPage : touchDataSet.ocPages) {
+    if (ocPage.pageNum == targetPage->pageNum) {
+      ocPage.objectColors.erase(
+        std::remove_if(ocPage.objectColors.begin(), ocPage.objectColors.end(),
+            [this, targetPage](const TDS::objectColor &oc){
+              return !vData->isExistsObject(oc.objectNum, targetPage->pageNum);
+        }),
+        ocPage.objectColors.end()
+      );
+    }
+  }
+
+  if (!isBatchUpdating && !onDisplay) {
+    commitProcessEdit();
+  }
+}
+
 bool TouchData::createProcess ( const String& processName, String objectName, TDS::TouchType type,
                               bool enableOverBorder, bool returnCurrentOver,
                               int multiClickCount, uint32_t colorCode,
@@ -244,13 +317,22 @@ bool TouchData::createProcess ( const String& processName, String objectName, TD
   int objectNum = vData->getObjectNumByName(objectName);
   if (objectNum < 0) return false;
 
+  // オブジェクト取得
+  const auto& obj = vData->getObjectData(vData->getPageData(targetPage->pageNum), objectNum);
+
+  // isUntouchable チェック
+  if (obj.isUntouchable) {
+    debugLog.printlnLog(debugLog.error, "The object is untouchable. Cannot create process. !" + obj.objectName);
+    return false;  // 強制終了
+  }
+
   int pageNum = onDisplay ? currentPageProcess.pageNum : editingPage.pageNum;
   if (isExistsProcessType(objectNum, type, pageNum)) {
-    debugLog.printlnLog(debugLog.error, "this processData exists.");
+    debugLog.printlnLog(debugLog.error, "this processData exists. !" + vData->getObjectData(vData->getPageData(pageNum), objectNum).objectName +", "+ int(type) +", "+ vData->getPageData(pageNum).pageName);
     return false;
   }
   if (isExistsProcessName(processName, onDisplay ? -1 : editingPage.pageNum)) {
-    debugLog.printlnLog(debugLog.error, "this processName exists.");
+    debugLog.printlnLog(debugLog.error, "this processName exists. !" + processName);
     return false;
   }
 
@@ -440,7 +522,7 @@ void TouchData::setProcessPage() {
   int pageNum = vData->getPageNumByName(drawingPageName);
   // ページ番号を引数から取得
   if (!isExistsPage(pageNum)) {
-    debugLog.printlnLog(debugLog.error, "Page not found." + String(pageNum));
+    debugLog.printlnLog(debugLog.error, "Page not found. !" + String(pageNum));
     return;
   }
 
@@ -458,6 +540,9 @@ void TouchData::setProcessPage() {
 
 
 bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
+  // isUntouchable が true の場合は描画スキップ
+  if (obj.isUntouchable) return true;
+
   // ここで色情報を取得
   int pageNum = currentPageProcess.pageNum;   // 現在のページ番号
   int objectNum = obj.objectNum;              // objからオブジェクト番号を取得
@@ -491,30 +576,30 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::DrawRect:
-      judgeSprite.drawRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
+      judgeSprite.fillRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
                       obj.objectArgs.rect.w, obj.objectArgs.rect.h,
                       objColor);
       break;
 
     case VDS::DrawType::DrawRoundRect:
-      judgeSprite.drawRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
+      judgeSprite.fillRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
                             obj.objectArgs.roundRect.w, obj.objectArgs.roundRect.h,
                             obj.objectArgs.roundRect.r, objColor);
       break;
 
     case VDS::DrawType::DrawCircle:
-      judgeSprite.drawCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
+      judgeSprite.fillCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
                         obj.objectArgs.circle.r, objColor);
       break;
 
     case VDS::DrawType::DrawEllipse:
-      judgeSprite.drawEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
+      judgeSprite.fillEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
                           obj.objectArgs.ellipse.rx, obj.objectArgs.ellipse.ry,
                           objColor);
       break;
 
     case VDS::DrawType::DrawTriangle:
-      judgeSprite.drawTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
+      judgeSprite.fillTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
                           obj.objectArgs.triangle.x1, obj.objectArgs.triangle.y1,
                           obj.objectArgs.triangle.x2, obj.objectArgs.triangle.y2,
                           objColor);
@@ -581,9 +666,19 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
 
     // -------------------- 文字描画 --------------------
     case VDS::DrawType::DrawString:
-      judgeSprite.setTextColor(objColor, objColor); 
+      if (obj.objectArgs.text.font)
+        judgeSprite.setFont(obj.objectArgs.text.font);
+
+      judgeSprite.setTextDatum(obj.objectArgs.text.datum);
+      judgeSprite.setTextColor(objColor, objColor);
+      judgeSprite.setTextSize(obj.objectArgs.text.textSize);
+
+      judgeSprite.setTextWrap(obj.objectArgs.text.textWrap, false);
+
       judgeSprite.drawString(obj.objectArgs.text.text,
-                        obj.objectArgs.text.x, obj.objectArgs.text.y);
+                        obj.objectArgs.text.x,
+                        obj.objectArgs.text.y);
+
       break;
 
     // -------------------- Clip系（範囲制限） --------------------
@@ -655,7 +750,14 @@ bool TouchData::judgeProcess (int x, int y) {
       if (proc.processNum == procNum) {
         uint32_t objColor = createOrGetObjectColor(currentPageProcess.pageNum, proc.objectNum, true);
         if (objColor == color) {
+          currentProcessObject = vData->getObjectData(vData->getPageData(), proc.objectNum);
           currentProcessName = proc.processName;  // 名前だけ保持
+
+          if (M5.Touch.getDetail().isReleased()) {
+            isObjectPressed = activeButton == currentProcessObject.objectNum;
+          } else {
+            activeButton = currentProcessObject.objectNum;
+          }
           return true;
         }
       }

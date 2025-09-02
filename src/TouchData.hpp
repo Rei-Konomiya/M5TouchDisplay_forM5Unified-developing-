@@ -1,5 +1,6 @@
 #pragma once
 #include <M5Unified.h>
+#include <set>
 #include "VisualData.hpp"
 #include "TouchDataSet.h"
 
@@ -16,7 +17,11 @@ public:
   TDS::PageData editingPage;
   TDS::PageData currentPageProcess;
   std::vector<int> enabledProcess;
+  
   String currentProcessName = "";
+  VDS::ObjectData currentProcessObject;
+  int activeButton = 0;
+  bool isObjectPressed = false;
 
   bool isBatchUpdating = false;
   int lastAssignedProcessNum = 0;
@@ -39,10 +44,10 @@ public:
   // 3. データ取得系
   // =========================
   const TDS::PageData* getPageData(int pageNum) const;
-  TDS::PageData* getPageData(int pageNum);    // ?
+  TDS::PageData* getPageData(int pageNum);
 
   int getProcessNumByName(const String& processName, int pageNum = -1) const;
-  int getObjectNumByProcess(int processNum, int pageNum = -1) const;    // ?
+  int getObjectNumByProcess(int processNum, int pageNum = -1) const;
 
   String getProcessName(int processNum, int pageNum = -1) const;
   TDS::TouchType getProcessType(int processNum, int pageNum = -1) const;
@@ -54,6 +59,9 @@ public:
   // 4. データ登録系
   // =========================
   bool changeEditPage(int pageNum);
+
+  bool deleteProcess(const String& processName, int pageNum = -1, bool onDisplay = false);
+  void defragProcesses(int pageNum = -1, bool onDisplay = false);
 
   bool createProcess( const String& processName, String objectName, TDS::TouchType type,
                       bool enableOverBorder = false, bool returnCurrentOver = false,

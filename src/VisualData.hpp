@@ -5,7 +5,6 @@
 #include <initializer_list>
 #include <Arduino.h>
 #include <M5Unified.h>
-#include <ArduinoJson.h>
 #include <FS.h>
 #include <SPIFFS.h>
 #include <SD.h>
@@ -67,35 +66,35 @@ public:
   bool deleteObject(const String& objectName, bool onDisplay = false);
   bool moveObject(const String& objectName, size_t newIndex, bool onDisplay = false);
 
-  VDS::ObjectData& createOrUpdateObject(VDS::DrawType type, const String& objectName, const VDS::ObjectArgs& args, uint8_t zIndex, bool onDisplay = false);
+  VDS::ObjectData& createOrUpdateObject(VDS::DrawType type, const String& objectName, const VDS::ObjectArgs& args, uint8_t zIndex, bool isUntouchable, bool onDisplay);
   // ピクセル
-  VDS::ObjectData setDrawPixelObject    (const String& objectName, int32_t x, int32_t y,                                                   int color, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawPixelObject    (const String& objectName, int32_t x, int32_t y,                                                   int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 線系
-  VDS::ObjectData setDrawLineObject     (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1,                         int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawWideLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int r,                  int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawBezierObject   (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawLineObject     (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1,                         int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawWideLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int r,                  int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawBezierObject   (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 矩形系
-  VDS::ObjectData setDrawRectObject       (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h,                           int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillRectObject       (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h,                           int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawRoundRectObject  (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r,                int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillRoundRectObject  (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r,                int color, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawRectObject       (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h,                           int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillRectObject       (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h,                           int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawRoundRectObject  (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r,                int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillRoundRectObject  (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r,                int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 円・楕円・三角形
-  VDS::ObjectData setDrawCircleObject   (const String& objectName, int32_t x,  int32_t y,  int32_t r,                                      int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillCircleObject   (const String& objectName, int32_t x,  int32_t y,  int32_t r,                                      int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawEllipseObject  (const String& objectName, int32_t x,  int32_t y,  int32_t rx, int32_t ry,                         int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillEllipseObject  (const String& objectName, int32_t x,  int32_t y,  int32_t rx, int32_t ry,                         int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawCircleObject   (const String& objectName, int32_t x,  int32_t y,  int32_t r,                                      int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillCircleObject   (const String& objectName, int32_t x,  int32_t y,  int32_t r,                                      int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawEllipseObject  (const String& objectName, int32_t x,  int32_t y,  int32_t rx, int32_t ry,                         int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillEllipseObject  (const String& objectName, int32_t x,  int32_t y,  int32_t rx, int32_t ry,                         int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // アーク
-  VDS::ObjectData setDrawArcObject        (const String& objectName, int32_t x, int32_t y, int32_t r0,  int32_t r1,  int32_t angle0, int32_t angle1,                                 int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillArcObject        (const String& objectName, int32_t x, int32_t y, int32_t r0,  int32_t r1,  int32_t angle0, int32_t angle1,                                 int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawEllipseArcObject (const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y,    int32_t r1y,    int32_t angle0, int32_t angle1, int color, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setFillEllipseArcObject (const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y,    int32_t r1y,    int32_t angle0, int32_t angle1, int color, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawArcObject        (const String& objectName, int32_t x, int32_t y, int32_t r0,  int32_t r1,  int32_t angle0, int32_t angle1,                                 int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillArcObject        (const String& objectName, int32_t x, int32_t y, int32_t r0,  int32_t r1,  int32_t angle0, int32_t angle1,                                 int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawEllipseArcObject (const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y,    int32_t r1y,    int32_t angle0, int32_t angle1, int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setFillEllipseArcObject (const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y,    int32_t r1y,    int32_t angle0, int32_t angle1, int color, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 画像
-  VDS::ObjectData setDrawJpgFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool onDisplay = false);
-  VDS::ObjectData setDrawPngFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawJpgFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawPngFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 文字
-  VDS::ObjectData setDrawStringObject(const String& objectName, int32_t x, int32_t y, const char* text, int color, int bgcolor, uint8_t zIndex = 0, bool onDisplay = false);
+  VDS::ObjectData setDrawStringObject(const String& objectName, int32_t x, int32_t y, const char* text, int color = WHITE, int bgcolor = -1, const lgfx::IFont* font = &fonts::lgfxJapanGothic_40, textdatum_t datum = textdatum_t::top_left, int textSize = 1, bool textWrap = true, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
 
   bool getJpgSize(fs::FS &fs, const char* filename, int &w, int &h);
 

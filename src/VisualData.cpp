@@ -193,8 +193,6 @@ bool VisualData::commitVisualEdit() {
   } else {
     visualDataSet.pages.push_back(editingPage);
   }
-
-  editingPage = VDS::PageData(); // 編集ページリセット
   return true;
 }
 
@@ -289,6 +287,10 @@ bool VisualData::deleteObject(const String& objectName, bool onDisplay) {
   objs.erase(objs.begin() + objIndex);
 
   debugLog.printlnLog(debugLog.success, "[" + objectName + "] has been deleted.");
+
+  if (!isBatchUpdating && !onDisplay) {
+    commitVisualEdit();
+  }
   return true;
 }
 
@@ -330,6 +332,10 @@ bool VisualData::moveObject(const String& objectName, size_t newIndex, bool onDi
   debugLog.printlnLog(debugLog.info, "[" + objectName + "] moved from " +
     String(currentIndex) + " to " + String(newIndex) + ".");
 
+  if (!isBatchUpdating && !onDisplay) {
+    commitVisualEdit();
+  }
+
   return true;
 }
 
@@ -337,7 +343,7 @@ bool VisualData::moveObject(const String& objectName, size_t newIndex, bool onDi
 
 
 
-VDS::ObjectData& VisualData::createOrUpdateObject (VDS::DrawType type, const String& objectName, const VDS::ObjectArgs& args, uint8_t zIndex, bool onDisplay) {
+VDS::ObjectData& VisualData::createOrUpdateObject (VDS::DrawType type, const String& objectName, const VDS::ObjectArgs& args, uint8_t zIndex, bool isUntouchable, bool onDisplay) {
   VDS::PageData* targetPage = onDisplay ? &currentPageCopy : &editingPage;
 
   if (!targetPage || targetPage->isEmpty()) {
@@ -352,6 +358,7 @@ VDS::ObjectData& VisualData::createOrUpdateObject (VDS::DrawType type, const Str
       obj.type = type;
       obj.objectArgs = args;
       obj.zIndex = zIndex;
+      obj.isUntouchable = isUntouchable;
       debugLog.printlnLog(debugLog.info, "[" + objectName + "] updated in place.");
       return obj;
     }
@@ -359,184 +366,190 @@ VDS::ObjectData& VisualData::createOrUpdateObject (VDS::DrawType type, const Str
 
   // 新規追加
   VDS::ObjectData newObj;
-  newObj.objectNum  = targetPage->objects.size();
-  newObj.objectName = objectName;
-  newObj.type       = type;
-  newObj.objectArgs = args;
-  newObj.zIndex     = zIndex;
+  newObj.objectNum     = targetPage->objects.size();
+  newObj.objectName    = objectName;
+  newObj.type          = type;
+  newObj.objectArgs    = args;
+  newObj.zIndex        = zIndex;
+  newObj.isUntouchable = isUntouchable;
 
   targetPage->objects.push_back(newObj);
-  return targetPage->objects.back();
+  VDS::ObjectData& result = targetPage->objects.back();
+
+  if (!isBatchUpdating && !onDisplay) {
+    commitVisualEdit();
+  }
+  return result;
 }
 
-VDS::ObjectData VisualData::setDrawPixelObject (const String& objectName, int32_t x, int32_t y, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawPixelObject (const String& objectName, int32_t x, int32_t y, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;  // ← 1行
   args.pixel.x = x;
   args.pixel.y = y;
   args.pixel.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawPixel, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawPixel, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 直線
-VDS::ObjectData VisualData::setDrawLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.line.x0 = x0;
   args.line.y0 = y0;
   args.line.x1 = x1;
   args.line.y1 = y1;
   args.line.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawLine, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawLine, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // ベジェ曲線
-VDS::ObjectData VisualData::setDrawBezierObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawBezierObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.bezier.x0 = x0; args.bezier.y0 = y0;
   args.bezier.x1 = x1; args.bezier.y1 = y1;
   args.bezier.x2 = x2; args.bezier.y2 = y2;
   args.bezier.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawBezier, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawBezier, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 太線
-VDS::ObjectData VisualData::setDrawWideLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawWideLineObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.wideLine.x0 = x0; args.wideLine.y0 = y0;
   args.wideLine.x1 = x1; args.wideLine.y1 = y1;
   args.wideLine.r = r;
   args.wideLine.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawWideLine, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawWideLine, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 矩形
-VDS::ObjectData VisualData::setDrawRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.rect.x = x; args.rect.y = y;
   args.rect.w = w; args.rect.h = h;
   args.rect.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawRect, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawRect, objectName, args, zIndex, isUntouchable, onDisplay);
 }
-VDS::ObjectData VisualData::setFillRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.rect.x = x; args.rect.y = y;
   args.rect.w = w; args.rect.h = h;
   args.rect.color = color;
 
-  return createOrUpdateObject(VDS::DrawType::FillRect, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillRect, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 角丸矩形
-VDS::ObjectData VisualData::setDrawRoundRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawRoundRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.roundRect.x = x; args.roundRect.y = y;
   args.roundRect.w = w; args.roundRect.h = h;
   args.roundRect.r = r;
   args.roundRect.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawRoundRect, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawRoundRect, objectName, args, zIndex, isUntouchable, onDisplay);
 }
-VDS::ObjectData VisualData::setFillRoundRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillRoundRectObject (const String& objectName, int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.roundRect.x = x; args.roundRect.y = y;
   args.roundRect.w = w; args.roundRect.h = h;
   args.roundRect.r = r;
   args.roundRect.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillRoundRect, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillRoundRect, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 円
-VDS::ObjectData VisualData::setDrawCircleObject (const String& objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawCircleObject (const String& objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.circle.x = x; args.circle.y = y;
   args.circle.r = r;
   args.circle.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawCircle, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawCircle, objectName, args, zIndex, isUntouchable, onDisplay);
 }
-VDS::ObjectData VisualData::setFillCircleObject (const String& objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillCircleObject (const String& objectName, int32_t x, int32_t y, int32_t r, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.circle.x = x; args.circle.y = y;
   args.circle.r = r;
   args.circle.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillCircle, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillCircle, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 楕円
-VDS::ObjectData VisualData::setDrawEllipseObject (const String& objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawEllipseObject (const String& objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.ellipse.x = x; args.ellipse.y = y;
   args.ellipse.rx = rx; args.ellipse.ry = ry;
   args.ellipse.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawEllipse, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawEllipse, objectName, args, zIndex, isUntouchable, onDisplay);
 }
-VDS::ObjectData VisualData::setFillEllipseObject (const String& objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillEllipseObject (const String& objectName, int32_t x, int32_t y, int32_t rx, int32_t ry, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.ellipse.x = x; args.ellipse.y = y;
   args.ellipse.rx = rx; args.ellipse.ry = ry;
   args.ellipse.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillEllipse, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillEllipse, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 三角形
-VDS::ObjectData VisualData::setDrawTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.triangle.x0 = x0; args.triangle.y0 = y0;
   args.triangle.x1 = x1; args.triangle.y1 = y1;
   args.triangle.x2 = x2; args.triangle.y2 = y2;
   args.triangle.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawTriangle, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawTriangle, objectName, args, zIndex, isUntouchable, onDisplay);
 }
-VDS::ObjectData VisualData::setFillTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillTriangleObject (const String& objectName, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.triangle.x0 = x0; args.triangle.y0 = y0;
   args.triangle.x1 = x1; args.triangle.y1 = y1;
   args.triangle.x2 = x2; args.triangle.y2 = y2;
   args.triangle.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillTriangle, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillTriangle, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // アーク
-VDS::ObjectData VisualData::setDrawArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.arc.x = x; args.arc.y = y;
   args.arc.r0 = r0; args.arc.r1 = r1;
   args.arc.angle0 = angle0; args.arc.angle1 = angle1;
   args.arc.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawArc, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawArc, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
-VDS::ObjectData VisualData::setFillArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0, int32_t r1, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.arc.x = x; args.arc.y = y;
   args.arc.r0 = r0; args.arc.r1 = r1;
   args.arc.angle0 = angle0; args.arc.angle1 = angle1;
   args.arc.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillArc, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillArc, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
-VDS::ObjectData VisualData::setDrawEllipseArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawEllipseArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.ellipseArc.x = x; args.ellipseArc.y = y;
   args.ellipseArc.r0x = r0x; args.ellipseArc.r1x = r1x;
   args.ellipseArc.r0y = r0y; args.ellipseArc.r1y = r1y;
   args.ellipseArc.angle0 = angle0; args.ellipseArc.angle1 = angle1;
   args.ellipseArc.color = color;
-  return createOrUpdateObject(VDS::DrawType::DrawEllipseArc, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawEllipseArc, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
-VDS::ObjectData VisualData::setFillEllipseArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setFillEllipseArcObject(const String& objectName, int32_t x, int32_t y, int32_t r0x, int32_t r1x, int32_t r0y, int32_t r1y, int32_t angle0, int32_t angle1, int color, uint8_t zIndex, bool isUntouchable, bool onDisplay) {;
   VDS::ObjectArgs args;
   args.ellipseArc.x = x; args.ellipseArc.y = y;
   args.ellipseArc.r0x = r0x; args.ellipseArc.r1x = r1x;
   args.ellipseArc.r0y = r0y; args.ellipseArc.r1y = r1y;
   args.ellipseArc.angle0 = angle0; args.ellipseArc.angle1 = angle1;
   args.ellipseArc.color = color;
-  return createOrUpdateObject(VDS::DrawType::FillEllipseArc, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::FillEllipseArc, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 
 // JPEG画像
 VDS::ObjectData VisualData::setDrawJpgFileObject (const String& objectName, VDS::DataType dataSource, const char* path,
-                                                            int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
-                                                            int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex, bool onDisplay) {;
+                                                    int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
+                                                    int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex, bool isUntouchable, bool onDisplay) {
   VDS::ObjectArgs args;
   args.jpg.dataSource = dataSource;
   args.jpg.path = path;
@@ -555,13 +568,13 @@ VDS::ObjectData VisualData::setDrawJpgFileObject (const String& objectName, VDS:
     args.jpg.w = 0; args.jpg.h = 0;
   }
 
-  return createOrUpdateObject(VDS::DrawType::DrawJpgFile, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawJpgFile, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // PNG画像
 VDS::ObjectData VisualData::setDrawPngFileObject (const String& objectName, VDS::DataType dataSource, const char* path,
-                                                            int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
-                                                            int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex, bool onDisplay) {;
+                                                    int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight,
+                                                    int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex, bool isUntouchable, bool onDisplay) {
   VDS::ObjectArgs args;
   args.png.dataSource = dataSource;
   args.png.path = path;
@@ -581,16 +594,22 @@ VDS::ObjectData VisualData::setDrawPngFileObject (const String& objectName, VDS:
     pngFile.close();
   }
 
-  return createOrUpdateObject(VDS::DrawType::DrawPngFile, objectName, args, zIndex, onDisplay);
+  return createOrUpdateObject(VDS::DrawType::DrawPngFile, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 // 文字
-VDS::ObjectData VisualData::setDrawStringObject (const String& objectName, int32_t x, int32_t y, const char* text, int color, int bgcolor, uint8_t zIndex, bool onDisplay) {;
+VDS::ObjectData VisualData::setDrawStringObject( const String& objectName, int32_t x, int32_t y,
+                                                  const char* text, int color, int bgcolor, const lgfx::IFont* font,
+                                                  textdatum_t datum, int textSize, bool textWrap,
+                                                  uint8_t zIndex, bool isUntouchable, bool onDisplay) {
   VDS::ObjectArgs args;
   args.text.x = x; args.text.y = y;
   args.text.text = text;
   args.text.color = color; args.text.bgcolor = bgcolor;
-  return createOrUpdateObject(VDS::DrawType::DrawString, objectName, args, zIndex, onDisplay);
+  args.text.font = font; args.text.datum = datum;
+  args.text.textSize = textSize; args.text.textWrap = textWrap;
+
+  return createOrUpdateObject(VDS::DrawType::DrawString, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
 bool VisualData::getJpgSize (fs::FS &fs, const char* filename, int &w, int &h) {
@@ -609,7 +628,7 @@ bool VisualData::getJpgSize (fs::FS &fs, const char* filename, int &w, int &h) {
 
 // 描画しないダミーコールバック
 void VisualData::pngle_on_draw(pngle_t *png, uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *rgba) {
-    // 何もしない
+  // 何もしない
 }
 
 // PNG ヘッダ読み取り用コールバック
@@ -663,14 +682,12 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::DrawLine:
-      Serial.println(F("drawing DrawLine"));
       sprite.drawLine(obj.objectArgs.line.x0, obj.objectArgs.line.y0,
                       obj.objectArgs.line.x1, obj.objectArgs.line.y1,
                       obj.objectArgs.line.color);
       break;
 
     case VDS::DrawType::DrawBezier:
-      Serial.println(F("drawing DrawBezier"));
       sprite.drawBezier(obj.objectArgs.bezier.x0, obj.objectArgs.bezier.y0,
                         obj.objectArgs.bezier.x1, obj.objectArgs.bezier.y1,
                         obj.objectArgs.bezier.x2, obj.objectArgs.bezier.y2,
@@ -678,41 +695,35 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::DrawWideLine:
-      Serial.println(F("drawing DrawWideLine"));
       sprite.drawWideLine(obj.objectArgs.wideLine.x0, obj.objectArgs.wideLine.y0,
                           obj.objectArgs.wideLine.x1, obj.objectArgs.wideLine.y1,
                           obj.objectArgs.wideLine.r, obj.objectArgs.wideLine.color);
       break;
 
     case VDS::DrawType::DrawRect:
-      Serial.println(F("drawing DrawRect"));
       sprite.drawRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
                       obj.objectArgs.rect.w, obj.objectArgs.rect.h,
                       obj.objectArgs.rect.color);
       break;
 
     case VDS::DrawType::DrawRoundRect:
-      Serial.println(F("drawing DrawRoundRect"));
       sprite.drawRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
                             obj.objectArgs.roundRect.w, obj.objectArgs.roundRect.h,
                             obj.objectArgs.roundRect.r, obj.objectArgs.roundRect.color);
       break;
 
     case VDS::DrawType::DrawCircle:
-      Serial.println(F("drawing DrawCircle"));
       sprite.drawCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
                         obj.objectArgs.circle.r, obj.objectArgs.circle.color);
       break;
 
     case VDS::DrawType::DrawEllipse:
-      Serial.println(F("drawing DrawEllipse"));
       sprite.drawEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
                           obj.objectArgs.ellipse.rx, obj.objectArgs.ellipse.ry,
                           obj.objectArgs.ellipse.color);
       break;
 
     case VDS::DrawType::DrawTriangle:
-      Serial.println(F("drawing DrawTriangle"));
       sprite.drawTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
                           obj.objectArgs.triangle.x1, obj.objectArgs.triangle.y1,
                           obj.objectArgs.triangle.x2, obj.objectArgs.triangle.y2,
@@ -721,27 +732,23 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
 
     // -------------------- 塗りつぶし --------------------
     case VDS::DrawType::FillRect:
-      Serial.println(F("drawing FillRect"));
       sprite.fillRect(obj.objectArgs.rect.x, obj.objectArgs.rect.y,
                       obj.objectArgs.rect.w, obj.objectArgs.rect.h,
                       obj.objectArgs.rect.color);
       break;
 
     case VDS::DrawType::FillRoundRect:
-      Serial.println(F("drawing FillRoundRect"));
       sprite.fillRoundRect(obj.objectArgs.roundRect.x, obj.objectArgs.roundRect.y,
                             obj.objectArgs.roundRect.w, obj.objectArgs.roundRect.h,
                             obj.objectArgs.roundRect.r, obj.objectArgs.roundRect.color);
       break;
 
     case VDS::DrawType::FillCircle:
-      Serial.println(F("drawing FillCircle"));
       sprite.fillCircle(obj.objectArgs.circle.x, obj.objectArgs.circle.y,
                         obj.objectArgs.circle.r, obj.objectArgs.circle.color);
       break;
 
     case VDS::DrawType::FillTriangle:
-      Serial.println(F("drawing FillTriangle"));
       sprite.fillTriangle(obj.objectArgs.triangle.x0, obj.objectArgs.triangle.y0,
                           obj.objectArgs.triangle.x1, obj.objectArgs.triangle.y1,
                           obj.objectArgs.triangle.x2, obj.objectArgs.triangle.y2,
@@ -749,14 +756,12 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::FillEllipse:
-      Serial.println(F("drawing FillEllipse"));
       sprite.fillEllipse(obj.objectArgs.ellipse.x, obj.objectArgs.ellipse.y,
                           obj.objectArgs.ellipse.rx, obj.objectArgs.ellipse.ry,
                           obj.objectArgs.ellipse.color);
       break;
 
     case VDS::DrawType::FillArc:
-      Serial.println(F("drawing FillArc"));
       sprite.fillArc(obj.objectArgs.arc.x, obj.objectArgs.arc.y,
                       obj.objectArgs.arc.r0, obj.objectArgs.arc.r1,
                       obj.objectArgs.arc.angle0, obj.objectArgs.arc.angle1,
@@ -764,7 +769,6 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::FillEllipseArc:
-      Serial.println(F("drawing FillEllipseArc"));
       sprite.fillEllipseArc(obj.objectArgs.ellipseArc.x, obj.objectArgs.ellipseArc.y,
                             obj.objectArgs.ellipseArc.r0x, obj.objectArgs.ellipseArc.r1x,
                             obj.objectArgs.ellipseArc.r0y, obj.objectArgs.ellipseArc.r1y,
@@ -774,7 +778,6 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
 
     // -------------------- 画像描画 --------------------
     case VDS::DrawType::DrawJpgFile:
-      Serial.println(F("drawing DrawJpgFile"));
       if (obj.objectArgs.jpg.path != nullptr) {
         if (obj.objectArgs.jpg.dataSource == VDS::DataType::SD) {
           File f = SD.open(obj.objectArgs.jpg.path);
@@ -793,7 +796,6 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
       break;
 
     case VDS::DrawType::DrawPngFile:
-      Serial.println(F("drawing DrawPngFile"));
       if (obj.objectArgs.png.path != nullptr) {
         if (obj.objectArgs.png.dataSource == VDS::DataType::SD) {
           File f = SD.open(obj.objectArgs.png.path);
@@ -813,10 +815,20 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
 
     // -------------------- 文字描画 --------------------
     case VDS::DrawType::DrawString:
-      Serial.println(F("drawing DrawString"));
+
+      if (obj.objectArgs.text.font)
+        sprite.setFont(obj.objectArgs.text.font);
+
+      sprite.setTextDatum(obj.objectArgs.text.datum);
       sprite.setTextColor(obj.objectArgs.text.color, obj.objectArgs.text.bgcolor);
+      sprite.setTextSize(obj.objectArgs.text.textSize);
+
+      sprite.setTextWrap(obj.objectArgs.text.textWrap, false);
+
       sprite.drawString(obj.objectArgs.text.text,
-                        obj.objectArgs.text.x, obj.objectArgs.text.y);
+                        obj.objectArgs.text.x,
+                        obj.objectArgs.text.y);
+
       break;
 
     // -------------------- Clip系（範囲制限） --------------------
@@ -862,7 +874,6 @@ bool VisualData::drawPage(LGFX_Sprite &sprite, const String pageName) {
                       return a.zIndex < b.zIndex;
                     });
 
-  Serial.println("clear Display");
   sprite.fillSprite(BLACK);
 
   // 描画
