@@ -250,7 +250,6 @@ bool TouchData::deleteProcess(const String& processName, int pageNum, bool onDis
       ++it;
     }
   }
-  return deleted;
 
   for (auto &ocPage : touchDataSet.ocPages) {
     if (ocPage.pageNum == targetPage->pageNum) {
@@ -267,6 +266,8 @@ bool TouchData::deleteProcess(const String& processName, int pageNum, bool onDis
   if (!isBatchUpdating && !onDisplay) {
     commitProcessEdit();
   }
+
+  return deleted;
 }
 
 void TouchData::defragProcesses(int pageNum, bool onDisplay)
@@ -722,52 +723,114 @@ bool TouchData::drawPageProcess() {
   return true;
 }
 
-bool TouchData::judgeProcess (int x, int y) {
-  // 1:現在のページのプロセス情報が存在するかチェック
-
+bool TouchData::judgeProcess(int x, int y) {
   if (currentPageProcess.isEmpty()) {
-    debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: currentPageProcess is empty. Cannot judge process.");
-    currentPageProcess = TDS::PageData();
-    return false;
+      debugLog.printlnLog(Debug::error, "[ERROR] judgeProcess: currentPageProcess is empty. Cannot judge process.");
+      currentPageProcess = TDS::PageData();
+      return false;
   }
 
-  // 2:有効プロセスリストが存在するかチェック
   if (enabledProcess.empty()) {
-    debugLog.printlnLog(Debug::info, "judgeProcess: No enabled processes. currentProcessName cleared.");
-    currentPageProcess = TDS::PageData();
-    return false;
+      debugLog.printlnLog(Debug::info, "judgeProcess: No enabled processes. currentProcessName cleared.");
+      currentPageProcess = TDS::PageData();
+      return false;
   }
 
-  // 3:タッチ座標の判定処理開始（ここからスプライト描画やカラーピック処理に移行）
   drawPageProcess();
-
-  // 4:タッチ座標の色取得
   int color = judgeSprite.readPixel(x, y);
+  auto t = M5.Touch.getDetail();
 
-  // 5: enabledProcess に対応するプロセスを探索
+  std::vector<std::pair<String, TDS::TouchType>> candidateProcesses;
+
   for (auto procNum : enabledProcess) {
     for (auto& proc : currentPageProcess.processes) {
-      if (proc.processNum == procNum) {
-        uint32_t objColor = createOrGetObjectColor(currentPageProcess.pageNum, proc.objectNum, true);
-        if (objColor == color) {
-          currentProcessObject = vData->getObjectData(vData->getPageData(), proc.objectNum);
-          currentProcessName = proc.processName;  // 名前だけ保持
+      if (proc.processNum != procNum) continue;
 
-          if (M5.Touch.getDetail().isReleased()) {
-            isObjectPressed = activeButton == currentProcessObject.objectNum;
-          } else {
-            activeButton = currentProcessObject.objectNum;
-          }
-          return true;
-        }
+      uint32_t objColor = createOrGetObjectColor(currentPageProcess.pageNum, proc.objectNum, true);
+      if (objColor != color) continue;
+
+      bool valid = false;
+      switch(proc.type) {
+        case TDS::TouchType::Press:      valid = t.wasPressed(); break;
+        case TDS::TouchType::Pressing:   valid = t.isPressed(); break;
+        case TDS::TouchType::Pressed:    valid = t.wasReleased(); break;
+        case TDS::TouchType::Release:    valid = t.wasReleased(); break;
+        case TDS::TouchType::Releasing:  valid = t.isReleased(); break;
+        case TDS::TouchType::Hold:       valid = t.wasHold(); break;
+        case TDS::TouchType::Holding:    valid = t.isHolding() && !t.isDragging(); break;
+        case TDS::TouchType::Held:       valid = wasHoldingOld && !t.wasDragged(); break;
+        case TDS::TouchType::Drag:       valid = t.wasDragStart(); break;
+        case TDS::TouchType::Dragging:   valid = t.isDragging(); break;
+        case TDS::TouchType::Dragged:    valid = t.wasDragged(); break;
+        case TDS::TouchType::Flick:      valid = t.wasFlickStart(); break;
+        case TDS::TouchType::Flicking:   valid = t.isFlicking(); break;
+        case TDS::TouchType::Flicked:    valid = t.wasFlicked(); break;
+        case TDS::TouchType::Clicked:    valid = t.wasClicked(); break;
+        case TDS::TouchType::MultiClicked: valid = t.getClickCount() >= proc.multiClickCount; break;
+      }
+
+      if (valid) {
+        candidateProcesses.emplace_back(proc.processName, proc.type);
       }
     }
   }
 
-  // 6: 該当なし
-  currentProcessName = "";
-  return false;
+  if (candidateProcesses.empty()) {
+    currentProcessNameVector.clear();
+    currentProcessName = "";
+    return false;
+  }
+
+  // 優先度順
+  std::vector<TDS::TouchType> priorityOrder = {
+    TDS::TouchType::Flick, TDS::TouchType::Flicking, TDS::TouchType::Flicked,
+    TDS::TouchType::Drag, TDS::TouchType::Dragging, TDS::TouchType::Dragged,
+    TDS::TouchType::Hold, TDS::TouchType::Holding, TDS::TouchType::Held,
+    TDS::TouchType::Clicked, TDS::TouchType::MultiClicked,
+    TDS::TouchType::Press, TDS::TouchType::Pressing,
+    TDS::TouchType::Pressed, TDS::TouchType::Release, TDS::TouchType::Releasing
+  };
+
+  auto getPriorityIndex = [&](TDS::TouchType type) {
+    for (size_t i = 0; i < priorityOrder.size(); ++i) {
+      if (priorityOrder[i] == type) return i;
+    }
+    return priorityOrder.size();
+  };
+
+  // 優先度でソート（indexが小さいほど優先度高）
+  std::sort(candidateProcesses.begin(), candidateProcesses.end(),
+  [&](const std::pair<String, TDS::TouchType> &a, const std::pair<String, TDS::TouchType> &b) {
+    auto getPriorityIndex = [&](TDS::TouchType tType) -> int {
+      for (size_t i = 0; i < priorityOrder.size(); ++i) {
+        if (priorityOrder[i] == tType) return i;
+      }
+      return INT_MAX;
+    };
+    return getPriorityIndex(a.second) < getPriorityIndex(b.second);
+  });
+
+  currentProcessNameVector.clear();
+  for (auto &p : candidateProcesses) currentProcessNameVector.push_back(p.first);
+  currentProcessName = currentProcessNameVector.front();
+
+  // HeldやactiveButtonの更新
+  auto topType = candidateProcesses.front().second;
+  if (topType == TDS::TouchType::Pressed || topType == TDS::TouchType::Release) {
+    isObjectPressed = activeButton == currentProcessObject.objectNum;
+  } else {
+    activeButton = currentProcessObject.objectNum;
+  }
+
+  if (topType == TDS::TouchType::Hold || topType == TDS::TouchType::Holding) {
+    wasHoldingOld = true;
+  } else if (topType == TDS::TouchType::Held) {
+    wasHoldingOld = false;
+  }
+
+  return true;
 }
+
 
 
 bool TouchData::update () {
@@ -789,7 +852,7 @@ bool TouchData::update () {
   auto t = M5.Touch.getDetail();
 
   // --- タッチ状態に基づいた有効化/無効化処理 ---
-  if (t.wasPressed()) {
+  if (t.isPressed()) {
     enableProcess(true);  // Press関連プロセスを有効化
     debugLog.printlnLog(Debug::info, "TouchData::update - wasPressed -> enabling Press processes.");
   } else if (t.wasReleased()) {
@@ -809,15 +872,14 @@ bool TouchData::update () {
       disableProcessType(TDS::TouchType::Dragged);
       disableProcessType(TDS::TouchType::Clicked);
       disableProcessType(TDS::TouchType::MultiClicked);
-    } 
-    else if (t.wasHold()) {
+    } else if (t.wasHold()) {
       debugLog.printlnLog(Debug::info, "TouchData::update - Hold detected.");
       disableProcessType(TDS::TouchType::Flick);
       disableProcessType(TDS::TouchType::Flicking);
       disableProcessType(TDS::TouchType::Flicked);
       disableProcessType(TDS::TouchType::Clicked);
       disableProcessType(TDS::TouchType::MultiClicked);
-      
+
       if (t.wasDragStart()) {
         debugLog.printlnLog(Debug::info, "TouchData::update - Drag start detected.");
         disableProcessType(TDS::TouchType::Hold);

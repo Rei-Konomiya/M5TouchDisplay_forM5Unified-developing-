@@ -18,6 +18,7 @@ public:
   TDS::PageData currentPageProcess;
   std::vector<int> enabledProcess;
   
+  std::vector<String> currentProcessNameVector;
   String currentProcessName = "";
   VDS::ObjectData currentProcessObject;
   int activeButton = 0;
@@ -26,6 +27,7 @@ public:
   bool isBatchUpdating = false;
   int lastAssignedProcessNum = 0;
 
+  bool wasHoldingOld = false;
   // =========================
   // 1. 初期化
   // =========================
