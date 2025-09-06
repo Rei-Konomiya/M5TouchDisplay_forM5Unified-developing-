@@ -93,6 +93,7 @@ public:
   // 画像
   VDS::ObjectData setDrawJpgFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   VDS::ObjectData setDrawPngFileObject(const String& objectName, VDS::DataType dataSource, const char* path, int32_t x, int32_t y, int32_t maxWidth, int32_t maxHeight, int32_t offX, int32_t offY, float scaleX, float scaleY, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
+  VDS::ObjectData setDrawBitmapObject ( const String& objectName, const uint16_t* bitmap, int32_t x, int32_t y, int32_t w, int32_t h, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
   // 文字
   VDS::ObjectData setDrawStringObject(const String& objectName, int32_t x, int32_t y, const char* text, int color = WHITE, int bgcolor = -1, const lgfx::IFont* font = &fonts::lgfxJapanGothic_40, textdatum_t datum = textdatum_t::top_left, int textSize = 1, bool textWrap = true, uint8_t zIndex = 0, bool isUntouchable = false, bool onDisplay = false);
 

@@ -597,6 +597,19 @@ VDS::ObjectData VisualData::setDrawPngFileObject (const String& objectName, VDS:
   return createOrUpdateObject(VDS::DrawType::DrawPngFile, objectName, args, zIndex, isUntouchable, onDisplay);
 }
 
+VDS::ObjectData VisualData::setDrawBitmapObject ( const String& objectName,
+                                                  const uint16_t* bitmap, int32_t x, int32_t y,
+                                                  int32_t w, int32_t h, uint8_t zIndex, bool isUntouchable, bool onDisplay) {
+  VDS::ObjectArgs args;
+  args.bitmap.data = bitmap;
+  args.bitmap.x = x;
+  args.bitmap.y = y;
+  args.bitmap.w = w;
+  args.bitmap.h = h;
+
+  return createOrUpdateObject(VDS::DrawType::DrawBitmap, objectName, args, zIndex, isUntouchable, onDisplay);
+}
+
 // 文字
 VDS::ObjectData VisualData::setDrawStringObject( const String& objectName, int32_t x, int32_t y,
                                                   const char* text, int color, int bgcolor, const lgfx::IFont* font,
@@ -810,6 +823,14 @@ bool VisualData::drawObject (LGFX_Sprite &sprite, const VDS::ObjectData &obj) {
             Serial.printf("Failed to open PNG: %s\n", obj.objectArgs.png.path);
           }
         }
+      }
+      break;
+
+    case VDS::DrawType::DrawBitmap:
+      if (obj.objectArgs.bitmap.data) {
+          sprite.pushImage(obj.objectArgs.bitmap.x, obj.objectArgs.bitmap.y,
+                          obj.objectArgs.bitmap.w, obj.objectArgs.bitmap.h,
+                          obj.objectArgs.bitmap.data);
       }
       break;
 

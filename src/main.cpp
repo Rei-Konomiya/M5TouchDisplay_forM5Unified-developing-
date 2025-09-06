@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <M5Unified.h>
-#include "VisualData.hpp"
-#include "TouchData.hpp"
+#include "VisualTouch.h"
 
 // カラー深度
 const int cDepth_24 = 16;
@@ -31,8 +30,7 @@ void sSetup() {
 }
 
 // VisualData / TouchData の初期化
-VisualData vData(&lcd, true, false, false);
-TouchData tData(&vData, true, false, false);
+VisualTouch vt(&lcd, true, false, false);
 
 // 現在ページ番号
 int currentPageNum = -1;
@@ -52,59 +50,59 @@ void setup() {
 
   // スプライト作成
   initSprite(sprite1, cDepth_24);
-  tData.initJudgeSprite(&lcd);
+  vt.tData.initJudgeSprite(&lcd);
 
   // --- page1 の設定 ---
-  vData.addPage("page1");
-  int page1 = vData.getPageNumByName("page1");
-  tData.changeEditPage(page1);
+  vt.vData.addPage("page1");
+  int page1 = vt.vData.getPageNumByName("page1");
+  vt.tData.changeEditPage(page1);
 
-  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
-  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED);
-  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
-  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
+  vt.vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
+  vt.vData.setFillRectObject("obj2", 120, 0, 200, 140, RED);
+  vt.vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
+  vt.vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
 
-  tData.setPressProcess("press1", "obj1");
-  tData.setPressProcess("press2", "obj2");
-  tData.setPressProcess("press3", "obj3");
-  tData.setPressProcess("press4", "obj4");
-  tData.setFlickProcess("flick1", "obj1");
-  tData.setFlickProcess("flick2", "obj2");
-  tData.setFlickProcess("flick3", "obj3");
-  tData.setFlickProcess("flick4", "obj4");
-  tData.setFlickingProcess("flicking1", "obj1");
-  tData.setFlickingProcess("flicking2", "obj2");
-  tData.setFlickingProcess("flicking3", "obj3");
-  tData.setFlickingProcess("flicking4", "obj4");
-  tData.setFlickedProcess("flicked1", "obj1");
-  tData.setFlickedProcess("flicked2", "obj2");
-  tData.setFlickedProcess("flicked3", "obj3");
-  tData.setFlickedProcess("flicked4", "obj4");
+  vt.tData.setPressProcess("press1", "obj1");
+  vt.tData.setPressProcess("press2", "obj2");
+  vt.tData.setPressProcess("press3", "obj3");
+  vt.tData.setPressProcess("press4", "obj4");
+  vt.tData.setFlickProcess("flick1", "obj1");
+  vt.tData.setFlickProcess("flick2", "obj2");
+  vt.tData.setFlickProcess("flick3", "obj3");
+  vt.tData.setFlickProcess("flick4", "obj4");
+  vt.tData.setFlickingProcess("flicking1", "obj1");
+  vt.tData.setFlickingProcess("flicking2", "obj2");
+  vt.tData.setFlickingProcess("flicking3", "obj3");
+  vt.tData.setFlickingProcess("flicking4", "obj4");
+  vt.tData.setFlickedProcess("flicked1", "obj1");
+  vt.tData.setFlickedProcess("flicked2", "obj2");
+  vt.tData.setFlickedProcess("flicked3", "obj3");
+  vt.tData.setFlickedProcess("flicked4", "obj4");
 
   // --- page2 の設定 ---
-  vData.addPage("page2");
-  int page2 = vData.getPageNumByName("page2");
-  tData.changeEditPage(page2);
+  vt.vData.addPage("page2");
+  int page2 = vt.vData.getPageNumByName("page2");
+  vt.tData.changeEditPage(page2);
 
-  vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
-  vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
-  vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
-  vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
+  vt.vData.setFillRectObject("obj1", 0, 0, 200, 140, BLUE);
+  vt.vData.setFillRectObject("obj2", 120, 0, 200, 140, RED, 1);
+  vt.vData.setFillRectObject("obj3", 0, 100, 200, 140, YELLOW);
+  vt.vData.setFillRectObject("obj4", 120, 100, 200, 140, GREEN);
 
-  tData.setHoldProcess("process1", "obj1");
-  tData.setHoldProcess("process2", "obj2");
-  tData.setHoldProcess("process3", "obj3");
-  tData.setHoldProcess("process4", "obj4");
+  vt.tData.setHoldProcess("process1", "obj1");
+  vt.tData.setHoldProcess("process2", "obj2");
+  vt.tData.setHoldProcess("process3", "obj3");
+  vt.tData.setHoldProcess("process4", "obj4");
 
-  vData.finalizeSetup();
-  tData.finalizeSetup();
+  vt.vData.finalizeSetup();
+  vt.tData.finalizeSetup();
 
   // --- 初期ページを page1 に設定 ---
   currentPageNum = page1;
-  tData.setProcessPage();
+  vt.tData.setProcessPage();
 
   // page1 を描画
-  vData.drawPage(sprite1, "page1");
+  vt.vData.drawPage(sprite1, "page1");
   sprite1.pushSprite(&lcd, 0, 0);
 }
 
@@ -196,7 +194,7 @@ void test(){
 void loop() {
   M5.update();
 
-  String currentPageName = vData.getPageData().pageName;
+  String currentPageName = vt.vData.getPageData().pageName;
   String pageName = currentPageName;
   // ページ切り替え
   if (M5.BtnA.isPressed()) {
@@ -214,14 +212,14 @@ void loop() {
     if (pageName != currentPageName) {
       currentPageName = pageName;
 
-      vData.drawPage(sprite1, currentPageName);
+      vt.vData.drawPage(sprite1, currentPageName);
       sprite1.pushSprite(&lcd, 0, 0);
-      tData.setProcessPage();
+      vt.tData.setProcessPage();
     }
 
     // タッチ処理
-    if (tData.update()) {
-      String proc = tData.currentProcessName;
+    if (vt.tData.update()) {
+      String proc = vt.tData.currentProcessName;
       if (proc != "") {
         Serial.printf("Process: %s\n", proc.c_str());
       }

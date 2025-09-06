@@ -665,17 +665,26 @@ bool TouchData::drawObjectProcess (const VDS::ObjectData &obj) {
                       objColor);
       break;
 
+    case VDS::DrawType::DrawBitmap:
+      judgeSprite.fillRect(obj.objectArgs.bitmap.x, obj.objectArgs.bitmap.y,
+                      obj.objectArgs.bitmap.w, obj.objectArgs.bitmap.h,
+                      objColor);
+      break;
+
     // -------------------- 文字描画 --------------------
     case VDS::DrawType::DrawString:
       if (obj.objectArgs.text.font)
         judgeSprite.setFont(obj.objectArgs.text.font);
 
       judgeSprite.setTextDatum(obj.objectArgs.text.datum);
-      judgeSprite.setTextColor(objColor, objColor);
       judgeSprite.setTextSize(obj.objectArgs.text.textSize);
-
       judgeSprite.setTextWrap(obj.objectArgs.text.textWrap, false);
 
+      judgeSprite.setTextColor(BLACK, objColor);
+      judgeSprite.drawString(obj.objectArgs.text.text,
+                        obj.objectArgs.text.x,
+                        obj.objectArgs.text.y);
+      judgeSprite.setTextColor(objColor, objColor);
       judgeSprite.drawString(obj.objectArgs.text.text,
                         obj.objectArgs.text.x,
                         obj.objectArgs.text.y);
@@ -816,10 +825,15 @@ bool TouchData::judgeProcess(int x, int y) {
 
   // HeldやactiveButtonの更新
   auto topType = candidateProcesses.front().second;
-  if (topType == TDS::TouchType::Pressed || topType == TDS::TouchType::Release) {
-    isObjectPressed = activeButton == currentProcessObject.objectNum;
-  } else {
-    activeButton = currentProcessObject.objectNum;
+  int topObjectNum = getObjectNumByProcess(getProcessNumByName(candidateProcesses.front().first));
+  currentProcessObject.objectNum = topObjectNum;
+  
+  if (topType == TDS::TouchType::Press) {
+    activeButton = topObjectNum;
+    isObjectPressed = false; // 押した直後はまだリリースしていないのでfalse
+  } else if (topType == TDS::TouchType::Release) {
+    isObjectPressed = (activeButton == topObjectNum);
+    activeButton = -1; // 判定後リセット
   }
 
   if (topType == TDS::TouchType::Hold || topType == TDS::TouchType::Holding) {

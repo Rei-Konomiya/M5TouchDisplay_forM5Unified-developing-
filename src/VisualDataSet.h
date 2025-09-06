@@ -29,6 +29,7 @@ public:
     
     DrawJpgFile,    // jpg ファイル描画
     DrawPngFile,    // png ファイル描画
+    DrawBitmap,     // bitmap ファイル描画
 
     DrawString,     // 文字ポジション付き
 
@@ -96,6 +97,14 @@ public:
     float scaleY = 0;
   };
 
+  struct BitmapArgs {
+    const uint16_t* data = nullptr;  // PROGMEMなどに置いた画像データ
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t w = 0;
+    int32_t h = 0;
+  };
+
   struct StringArgs { 
     int32_t x = 0;
     int32_t y = 0;
@@ -126,6 +135,7 @@ public:
 
     JpgFileArgs    jpg;
     PngFileArgs    png;
+    BitmapArgs     bitmap;
 
     StringArgs     text;
     
